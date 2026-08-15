@@ -1,0 +1,116 @@
+name: Deploy Production
+
+# Same trigger shape as deploy-staging.yml (push to main) - the safety gate
+# here isn't the trigger, it's `environment: production` below, which holds
+# both jobs for the required reviewers configured in Settings > Environments
+# > production until someone approves the run.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Existing image tag to redeploy instead of building HEAD (e.g. a previous commit SHA, for rollback)"
+        required: false
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+
+jobs:
+  build-and-push:
+    name: Build and push images
+    runs-on: ubuntu-latest
+    # `environment: production` is what makes this job wait on the required
+    # reviewers configured in Settings > Environments > production - that
+    # gate can't be expressed in YAML alone, it has to be turned on there.
+    environment: production
+    outputs:
+      image-tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: tag
+        run: |
+          if [ -n "${{ inputs.image_tag }}" ]; then
+            echo "tag=${{ inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend image
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          REPOSITORY: ${{ vars.ECR_REPOSITORY_BACKEND }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          docker build -f apps/backend/Dockerfile \
+            -t "$REGISTRY/$REPOSITORY:$TAG" \
+            -t "$REGISTRY/$REPOSITORY:production-latest" .
+          docker push "$REGISTRY/$REPOSITORY:$TAG"
+          docker push "$REGISTRY/$REPOSITORY:production-latest"
+
+      - name: Build and push ai-service image
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          REPOSITORY: ${{ vars.ECR_REPOSITORY_AI_SERVICE }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          docker build -f apps/ai-service/Dockerfile \
+            -t "$REGISTRY/$REPOSITORY:$TAG" \
+            -t "$REGISTRY/$REPOSITORY:production-latest" \
+            apps/ai-service
+          docker push "$REGISTRY/$REPOSITORY:$TAG"
+          docker push "$REGISTRY/$REPOSITORY:production-latest"
+
+  deploy:
+    name: Deploy to ECS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: production
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Force new deployment (backend)
+        run: |
+          aws ecs update-service \
+            --cluster "${{ vars.ECS_CLUSTER_PRODUCTION }}" \
+            --service "${{ vars.ECS_SERVICE_BACKEND_PRODUCTION }}" \
+            --force-new-deployment
+
+      - name: Force new deployment (ai-service)
+        run: |
+          aws ecs update-service \
+            --cluster "${{ vars.ECS_CLUSTER_PRODUCTION }}" \
+            --service "${{ vars.ECS_SERVICE_AI_PRODUCTION }}" \
+            --force-new-deployment
+
+      - name: Wait for services to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster "${{ vars.ECS_CLUSTER_PRODUCTION }}" \
+            --services "${{ vars.ECS_SERVICE_BACKEND_PRODUCTION }}" "${{ vars.ECS_SERVICE_AI_PRODUCTION }}"

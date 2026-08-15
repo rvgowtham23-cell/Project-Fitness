@@ -1,0 +1,92 @@
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import type { NutritionTargets } from '@fitness/shared-types';
+import { Button, Card, LoadingState, Screen } from '../../src/components/ui';
+import { colors, spacing, typography } from '../../src/theme';
+import { useOnboarding } from '../../src/state/onboarding-context';
+import { calculateNutritionTargets } from '../../src/lib/calorie-engine';
+import { apiClient } from '../../src/lib/api-client';
+
+// The "reward" screen per architecture-plan.md §I: progressive onboarding ends with an
+// immediate, concrete payoff (your numbers) rather than just dumping the user into an
+// empty dashboard.
+export default function TargetsScreen() {
+  const { draft, completeOnboarding } = useOnboarding();
+  const [targets, setTargets] = useState<NutritionTargets | null>(null);
+
+  useEffect(() => {
+    const localEstimate = calculateNutritionTargets(draft);
+    apiClient.submitOnboarding(draft, localEstimate).then(setTargets);
+  }, [draft]);
+
+  if (!targets) {
+    return (
+      <Screen>
+        <LoadingState label="Calculating your targets…" />
+      </Screen>
+    );
+  }
+
+  function finish() {
+    completeOnboarding();
+    router.replace('/(tabs)/home');
+  }
+
+  return (
+    <Screen>
+      <View style={styles.iconWrap}>
+        <Ionicons name="checkmark-circle" size={56} color={colors.accent} />
+      </View>
+      <Text style={[typography.h1, styles.centerText]}>You're all set{draft.name ? `, ${draft.name}` : ''}!</Text>
+      <Text style={[typography.body, styles.centerText, styles.subtitle]}>
+        Here's your personalized daily target, based on what you told us.
+      </Text>
+
+      <Card style={styles.calorieCard}>
+        <Text style={typography.caption}>Daily calorie target</Text>
+        <Text style={styles.calorieValue}>{targets.calorieTarget}</Text>
+        <Text style={typography.caption}>kcal / day</Text>
+      </Card>
+
+      <View style={styles.macroGrid}>
+        <MacroTile label="Protein" value={targets.proteinTargetG} unit="g" color={colors.macro.protein} />
+        <MacroTile label="Carbs" value={targets.carbTargetG} unit="g" color={colors.macro.carbs} />
+        <MacroTile label="Fat" value={targets.fatTargetG} unit="g" color={colors.macro.fat} />
+        <MacroTile label="Fiber" value={targets.fiberTargetG} unit="g" color={colors.macro.fiber} />
+      </View>
+
+      <Text style={[typography.caption, styles.disclaimer]}>
+        These update automatically as you log — adjust anytime from Profile → Goals.
+      </Text>
+
+      <Button label="Let's go" onPress={finish} variant="accent" style={styles.finishBtn} />
+    </Screen>
+  );
+}
+
+function MacroTile({ label, value, unit, color }: { label: string; value: number; unit: string; color: string }) {
+  return (
+    <Card style={styles.macroTile}>
+      <View style={[styles.macroDot, { backgroundColor: color }]} />
+      <Text style={typography.h2}>{value}</Text>
+      <Text style={typography.caption}>
+        {unit} {label}
+      </Text>
+    </Card>
+  );
+}
+
+const styles = StyleSheet.create({
+  iconWrap: { alignItems: 'center', marginBottom: spacing.md },
+  centerText: { textAlign: 'center' },
+  subtitle: { marginTop: spacing.sm, marginBottom: spacing.xl, color: colors.textSecondary },
+  calorieCard: { alignItems: 'center', marginBottom: spacing.lg },
+  calorieValue: { fontSize: 48, fontWeight: '800', color: colors.textPrimary },
+  macroGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginBottom: spacing.lg },
+  macroTile: { flexBasis: '47%', alignItems: 'center' },
+  macroDot: { width: 10, height: 10, borderRadius: 5, marginBottom: spacing.xs },
+  disclaimer: { textAlign: 'center', marginBottom: spacing.xl },
+  finishBtn: { marginTop: spacing.sm },
+});

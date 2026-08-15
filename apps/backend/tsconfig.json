@@ -1,0 +1,32 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2022",
+    "declaration": false,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "outDir": "./dist",
+    // No `rootDir` pin: @fitness/shared-types resolves straight to its .ts source (see its
+    // package.json), which TS pulls into this program from outside apps/backend/src — pinning
+    // rootDir to ./src would make that a hard error (TS6059). Emit lands at
+    // dist/apps/backend/src/main.js as a result (see start:prod below and Dockerfile CMD).
+    "incremental": true,
+    "skipLibCheck": true,
+    // NestJS entities/DTOs intentionally have no-initializer properties (populated by
+    // TypeORM/class-transformer, not a constructor) — narrow strict off for that one check.
+    "strictPropertyInitialization": false,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": "./",
+    "paths": {
+      "@fitness/shared-types": ["../../packages/shared-types/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "test"]
+}

@@ -1,0 +1,30 @@
+# Copy to terraform.tfvars and fill in real values.
+# terraform.tfvars is git-ignored - never commit real secrets/ARNs here.
+
+aws_region  = "ap-south-1"
+environment = "staging"
+project     = "fitness-platform"
+
+certificate_arn         = "arn:aws:acm:ap-south-1:123456789012:certificate/REPLACE_ME"
+meal_images_bucket_name = "fitness-platform-staging-meal-images-REPLACE_WITH_ACCOUNT_ID"
+
+# Prefer setting these via TF_VAR_db_master_password / TF_VAR_anthropic_api_key
+# environment variables (or a secrets-managed CI pipeline) instead of putting
+# real values in this file, even locally.
+db_master_username = "fitness_app"
+db_master_password = "REPLACE_ME"
+anthropic_api_key  = "REPLACE_ME"
+
+backend_image     = "123456789012.dkr.ecr.ap-south-1.amazonaws.com/fitness-platform-backend:latest"
+ai_service_image  = "123456789012.dkr.ecr.ap-south-1.amazonaws.com/fitness-platform-ai-service:latest"
+
+rds_instance_class = "db.t4g.micro"
+redis_node_type    = "cache.t4g.micro"
+
+backend_cpu            = 256
+backend_memory         = 512
+backend_desired_count  = 1
+
+ai_service_cpu           = 512
+ai_service_memory        = 1024
+ai_service_desired_count = 1

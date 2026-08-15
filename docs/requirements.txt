@@ -1,0 +1,2195 @@
+# MASTER PROMPT — END-TO-END AI FITNESS APP
+
+## ROLE
+
+You are acting as a **Principal Software Architect, Senior Product Engineer, AI/ML Architect, Database Architect, Mobile Engineer, Web Engineer, DevOps Engineer, UI/UX Designer, and Product Manager**.
+
+I want to build a **production-grade, end-to-end fitness platform from scratch**, consisting of:
+
+1. A mobile application for iOS and Android
+2. A web application/dashboard
+3. Backend APIs
+4. Relational database
+5. AI-powered food recognition and nutrition estimation
+6. AI-powered fitness coaching
+7. Workout tracking
+8. Analytics and reporting
+9. Authentication and user management
+10. Notifications
+11. Admin capabilities
+12. Scalable cloud infrastructure
+
+The product should be designed as a serious commercial-grade application, not a prototype.
+
+---
+
+# IMPORTANT — PLANNING MODE
+
+DO NOT START WRITING THE APPLICATION CODE YET.
+
+We are currently in the **PLANNING PHASE**.
+
+Your first responsibility is to deeply analyze this product idea and produce a complete technical and product implementation plan.
+
+Do not make random technology choices without explaining why.
+
+If there are multiple viable approaches, compare them and recommend one.
+
+Before implementation, identify:
+
+* Functional requirements
+* Non-functional requirements
+* User journeys
+* Product modules
+* Database entities
+* API requirements
+* AI requirements
+* Mobile architecture
+* Web architecture
+* Backend architecture
+* Infrastructure
+* Security
+* Scalability
+* Observability
+* Testing
+* Deployment
+* CI/CD
+* Cost considerations
+* Third-party dependencies
+* Potential technical risks
+* AI limitations
+* Data/privacy considerations
+
+Do not blindly follow my proposed architecture if you believe there is a better production-grade approach.
+
+You are expected to challenge my assumptions where necessary.
+
+---
+
+# PRODUCT VISION
+
+The application is an **AI-powered personal fitness and nutrition platform**.
+
+The main idea is:
+
+A user signs up through the mobile application.
+
+The application collects the user's basic information and fitness goals.
+
+Based on that information, the system calculates appropriate daily calorie and nutrition targets.
+
+The user can then:
+
+* Track food through photos
+* Track food manually
+* Track packaged foods through barcode scanning
+* Track meals
+* Track calories
+* Track protein
+* Track carbohydrates
+* Track fats
+* Track fiber
+* Track water
+* Track body weight
+* Track body measurements
+* Track workouts
+* Track gym exercises
+* Log weight/reps/sets
+* Log workouts using text
+* Log workouts using voice
+* Get AI-generated workout recommendations
+* Get AI-generated nutrition insights
+* View daily progress
+* View weekly progress
+* View monthly progress
+* Ask an AI fitness coach questions
+* Receive recommendations based on historical activity
+
+The application should become a user's long-term fitness journal.
+
+---
+
+# 1. USER REGISTRATION AND ONBOARDING
+
+After registration/login, the application should collect the user's basic information.
+
+Possible fields:
+
+* First name
+* Last name
+* Email
+* Mobile number
+* Date of birth
+* Gender
+* Height
+* Weight
+* Activity level
+* Fitness experience
+* Fitness goal
+* Target weight
+* Preferred workout location
+* Available equipment
+* Workout frequency
+* Dietary preferences
+* Allergies
+* Food preferences
+* Optional body measurements
+* Optional body composition data
+* Optional body scan / body analysis information
+
+Fitness goals should include at minimum:
+
+* Weight loss
+* Fat loss
+* Weight maintenance
+* Muscle gain
+* Strength improvement
+* General fitness
+* Endurance
+* Body recomposition
+
+The onboarding experience should be simple and progressive.
+
+Do not ask 30 questions on the first screen.
+
+Design a good onboarding flow where information is collected logically.
+
+---
+
+# 2. BMI AND CALORIE CALCULATION
+
+The system should calculate:
+
+* BMI
+* BMR
+* Estimated TDEE
+* Daily calorie target
+* Protein target
+* Carbohydrate target
+* Fat target
+* Fiber target
+* Water target
+
+Use scientifically accepted formulas where appropriate.
+
+Do not present BMI as a medical diagnosis.
+
+The system should clearly distinguish:
+
+* Calculated values
+* Estimated values
+* User-entered values
+* AI-estimated values
+
+The calorie recommendation engine should consider:
+
+* Age
+* Sex/gender where relevant to the formula
+* Height
+* Weight
+* Activity level
+* Fitness goal
+* Target weight
+* Desired rate of weight change
+
+The architecture must allow these calculations to evolve later without rewriting the entire system.
+
+---
+
+# 3. FOOD / MEAL TRACKING
+
+This is one of the most important modules.
+
+The user should be able to log food using multiple methods.
+
+### Method 1 — AI PHOTO RECOGNITION
+
+User opens:
+
+"Add Meal"
+
+Then:
+
+"Take Photo"
+
+The user takes a photo of the meal.
+
+Example:
+
+A plate contains:
+
+* Boiled sweet potato
+* Boiled eggs
+* Cucumber
+* Carrot
+
+The AI should attempt to identify the food items.
+
+It should estimate:
+
+* Food item
+* Portion size
+* Approximate weight
+* Calories
+* Protein
+* Carbohydrates
+* Fat
+* Fiber
+* Other useful nutrients where available
+
+Example result:
+
+Sweet Potato
+Estimated quantity: 150g
+Calories: approximately X
+Protein: X
+Carbohydrates: X
+Fat: X
+Fiber: X
+
+Egg
+Estimated quantity: 2 eggs
+Calories: approximately X
+Protein: X
+etc.
+
+IMPORTANT:
+
+Do not assume that computer vision can perfectly determine food weight from a normal photograph.
+
+Design the system so that AI provides an estimate and the user can correct:
+
+* Food item
+* Quantity
+* Serving size
+* Number of pieces
+* Weight
+
+The application should show confidence where appropriate.
+
+For example:
+
+"Estimated with 78% confidence"
+
+The user should be able to tap:
+
+"Correct"
+
+and modify the result.
+
+The corrected data should be stored and used to improve future recommendations where appropriate.
+
+---
+
+# 4. FOOD AI PIPELINE
+
+Design a proper AI pipeline.
+
+Investigate and propose the best architecture for:
+
+IMAGE
+→ IMAGE PROCESSING
+→ FOOD DETECTION
+→ FOOD CLASSIFICATION
+→ PORTION ESTIMATION
+→ NUTRITION DATABASE LOOKUP
+→ CALORIE/MACRO CALCULATION
+→ USER CONFIRMATION
+→ MEAL LOG
+
+Do not simply send the image to an LLM and assume everything is solved.
+
+Evaluate:
+
+* Computer vision models
+* Multimodal LLMs
+* Nutrition databases
+* Portion estimation techniques
+* OCR
+* Barcode APIs
+* Food databases
+* Recipe decomposition
+* Indian food recognition
+* Regional food recognition
+* Mixed dishes
+
+The system should be especially capable of handling Indian foods.
+
+Examples:
+
+* Idli
+* Dosa
+* Sambar
+* Rice
+* Dal
+* Chapati
+* Roti
+* Biryani
+* Upma
+* Pongal
+* Poha
+* Curd rice
+* Vegetable curry
+* Paneer
+* Chicken
+* Fish
+* Eggs
+* Fruits
+* Indian snacks
+
+Consider regional foods as well.
+
+---
+
+# 5. MANUAL FOOD ENTRY
+
+AI should not be the only mechanism.
+
+Provide:
+
+* Search food
+* Select food
+* Serving size
+* Quantity
+* Calories
+* Macros
+
+Allow users to create:
+
+* Custom foods
+* Custom recipes
+* Custom meals
+
+Example:
+
+"My Breakfast"
+
+contains:
+
+* 2 eggs
+* 150g sweet potato
+* 100g cucumber
+* 50g carrot
+
+The user can save this meal and reuse it.
+
+---
+
+# 6. BARCODE SCANNING
+
+Add barcode scanning for packaged food.
+
+Flow:
+
+SCAN BARCODE
+→ PRODUCT LOOKUP
+→ NUTRITION INFORMATION
+→ SERVING SIZE
+→ USER CONFIRMATION
+→ MEAL LOG
+
+Research suitable food/product databases and design the system so that the provider can be replaced later.
+
+---
+
+# 7. DAILY NUTRITION DASHBOARD
+
+The home dashboard should immediately show:
+
+Calories
+
+Consumed: 1,450 kcal
+Target: 2,200 kcal
+Remaining: 750 kcal
+
+Macros:
+
+Protein
+Consumed / Target
+
+Carbohydrates
+Consumed / Target
+
+Fat
+Consumed / Target
+
+Fiber
+Consumed / Target
+
+Water
+Consumed / Target
+
+Meals:
+
+Breakfast
+Lunch
+Snack
+Dinner
+
+The dashboard should use intuitive visualizations.
+
+Avoid creating a dashboard that looks like an enterprise BI application.
+
+It should feel like a modern consumer fitness application.
+
+---
+
+# 8. DAILY FOOD ANALYTICS
+
+For each day calculate:
+
+* Total calories
+* Protein
+* Carbohydrates
+* Fat
+* Fiber
+* Water
+* Number of meals
+* Average calories per meal
+* Target achievement percentage
+* Macro distribution
+* Remaining calories
+* Remaining macros
+
+Generate useful insights.
+
+Example:
+
+"Protein intake is 18% below today's target."
+
+"You consumed most of today's calories during dinner."
+
+"Your fiber intake is below your weekly average."
+
+Do not make medical claims.
+
+---
+
+# 9. FITNESS / WORKOUT MODULE
+
+The second major pillar is FITNESS.
+
+Users should be able to create or receive workout plans.
+
+Examples:
+
+* Full body workout
+* Push/Pull/Legs
+* Upper/Lower
+* Beginner workout
+* Weight loss workout
+* Muscle building
+* Strength training
+* Home workout
+* Gym workout
+* Dumbbell workout
+* No-equipment workout
+
+The system should consider:
+
+* Age
+* Fitness experience
+* Goal
+* Available equipment
+* Workout frequency
+* Available time
+* Current strength
+* Previous workouts
+* Injuries/limitations if voluntarily provided
+
+Do not make unsafe medical recommendations.
+
+---
+
+# 10. EXERCISE LIBRARY
+
+Create an exercise database.
+
+Each exercise should contain appropriate fields such as:
+
+* Exercise name
+* Muscle group
+* Primary muscle
+* Secondary muscles
+* Equipment
+* Difficulty
+* Exercise type
+* Instructions
+* Sets
+* Reps
+* Duration
+* Rest period
+* Video/image reference
+* Alternatives
+* Progression options
+* Regression options
+
+Examples:
+
+* Squat
+* Bench Press
+* Deadlift
+* Lat Pulldown
+* Barbell Row
+* Shoulder Press
+* Bicep Curl
+* Tricep Extension
+* Leg Press
+* Lunges
+* Pushups
+* Pullups
+* Plank
+
+Design the database so exercises can be expanded later.
+
+---
+
+# 11. WORKOUT LOGGING
+
+Users should be able to log:
+
+Exercise
+Set
+Weight
+Reps
+Duration
+Rest
+
+Example:
+
+Bench Press
+
+Set 1
+60 kg × 10
+
+Set 2
+65 kg × 8
+
+Set 3
+65 kg × 7
+
+The application should automatically store the workout session.
+
+---
+
+# 12. TEXT WORKOUT LOGGING
+
+Allow natural language.
+
+Example:
+
+"Today I did bench press 60 kg for 10 reps, 65 kg for 8 reps and 65 kg for 7 reps."
+
+The AI should parse this into structured workout data.
+
+TEXT
+→ AI PARSER
+→ STRUCTURED WORKOUT
+→ USER CONFIRMATION
+→ DATABASE
+
+Do not automatically insert ambiguous information without confirmation.
+
+---
+
+# 13. VOICE WORKOUT LOGGING
+
+Allow:
+
+"Bench press, 60 kilos, 10 reps."
+
+The application should:
+
+VOICE
+→ SPEECH TO TEXT
+→ WORKOUT PARSER
+→ STRUCTURED DATA
+→ USER CONFIRMATION
+→ DATABASE
+
+Research suitable speech-to-text architecture.
+
+---
+
+# 14. WORKOUT PROGRESSION
+
+Track:
+
+* Volume
+* Weight
+* Reps
+* Sets
+* Frequency
+* Personal records
+* Estimated 1RM where appropriate
+* Exercise progression
+* Muscle group volume
+* Workout consistency
+
+Example insight:
+
+"Your bench press increased from 50 kg × 8 to 60 kg × 8 over the last 6 weeks."
+
+"Your lower-body training volume decreased 15% this week."
+
+The application should help the user understand progress.
+
+---
+
+# 15. AI FITNESS COACH
+
+Create an AI coach.
+
+Users should be able to ask:
+
+"What should I eat for dinner?"
+
+"How much protein do I have left?"
+
+"What workout should I do today?"
+
+"I missed my workout yesterday. What should I do today?"
+
+"My weight hasn't changed for 3 weeks. What should I review?"
+
+"Can you create a 4-day gym workout?"
+
+"Replace squats because I don't have a squat rack."
+
+The AI coach should use the user's actual application data.
+
+It should have access, through controlled backend tools, to:
+
+* Profile
+* Goals
+* Nutrition history
+* Workout history
+* Weight history
+* Measurements
+* Progress
+* Exercise history
+
+Do not simply pass the entire database to an LLM.
+
+Design a proper AI context/retrieval architecture.
+
+---
+
+# 16. WEEKLY DASHBOARD
+
+This is a major product feature.
+
+Every week show:
+
+### Nutrition
+
+* Average calories
+* Target calories
+* Protein average
+* Carb average
+* Fat average
+* Fiber average
+* Water average
+* Goal adherence
+* Best day
+* Worst day
+* Meal consistency
+
+### Fitness
+
+* Workout count
+* Total workout time
+* Total volume
+* Calories burned if reliable
+* Muscle groups trained
+* Personal records
+* Exercise progression
+* Workout consistency
+
+### Body
+
+* Weight change
+* BMI trend
+* Body measurements
+* Body composition if available
+
+### Overall
+
+Create an easy-to-understand weekly score.
+
+For example:
+
+Nutrition: 82%
+Workout: 91%
+Consistency: 88%
+
+But design the scoring methodology carefully.
+
+Do not invent arbitrary scores without defining the calculation.
+
+---
+
+# 17. CHARTS
+
+Recommend appropriate charts.
+
+Examples:
+
+Weight:
+
+Line chart
+
+Calories:
+
+Bar chart
+
+Protein:
+
+Target vs actual
+
+Workout volume:
+
+Line chart
+
+Body measurements:
+
+Trend chart
+
+Workout consistency:
+
+Calendar/heatmap
+
+Macro distribution:
+
+Donut chart
+
+Weekly comparison:
+
+Current week vs previous week
+
+Keep charts mobile-friendly.
+
+---
+
+# 18. MONTHLY / LONG-TERM PROGRESS
+
+The application should support:
+
+* 30-day progress
+* 90-day progress
+* 6-month progress
+* 1-year progress
+
+Track:
+
+* Weight
+* Calories
+* Macros
+* Workouts
+* Strength
+* Measurements
+* Consistency
+* Personal records
+
+Allow users to visually see long-term progress.
+
+---
+
+# 19. BODY ANALYSIS
+
+Design optional body analysis features.
+
+Possible inputs:
+
+* Weight
+* Waist
+* Chest
+* Arms
+* Thighs
+* Hips
+* Body fat percentage
+* Muscle mass
+* Visceral fat
+* Other values from smart scales / body composition devices
+
+If photo-based body analysis is considered, clearly identify the limitations and privacy implications.
+
+Do not make unsupported medical or diagnostic claims.
+
+---
+
+# 20. USER GOALS
+
+Support goals such as:
+
+Lose 10 kg
+
+Gain 5 kg muscle
+
+Reach 15% body fat
+
+Improve strength
+
+Exercise 4 days per week
+
+Eat sufficient protein
+
+Maintain weight
+
+The system should measure progress against the selected goal.
+
+---
+
+# 21. NOTIFICATIONS
+
+Design useful notifications such as:
+
+Meal logging reminder
+
+Workout reminder
+
+Water reminder
+
+Weekly report available
+
+Goal progress
+
+Missed workout
+
+Consistency milestone
+
+Avoid excessive notifications.
+
+Notification preferences should be configurable.
+
+---
+
+# 22. GAMIFICATION
+
+Consider optional:
+
+* Streaks
+* Milestones
+* Badges
+* Personal records
+* Weekly goals
+* Consistency achievements
+
+Do not make the application childish.
+
+Keep it premium and professional.
+
+---
+
+# 23. MOBILE APPLICATION
+
+Recommend the best mobile technology.
+
+Evaluate:
+
+* Flutter
+* React Native
+* Native Android/iOS
+
+Consider:
+
+* Performance
+* Camera integration
+* Voice recording
+* AI integration
+* Offline support
+* Push notifications
+* Development speed
+* Long-term maintainability
+
+Then recommend ONE approach.
+
+---
+
+# 24. WEB APPLICATION
+
+The website should support:
+
+* Login
+* Dashboard
+* Nutrition analytics
+* Workout analytics
+* Progress tracking
+* Profile
+* Goals
+* Reports
+* AI coach
+* Settings
+
+The web application should not necessarily duplicate every mobile feature.
+
+Define clearly what belongs on mobile versus web.
+
+---
+
+# 25. BACKEND
+
+Design a scalable backend architecture.
+
+Evaluate:
+
+* Node.js/NestJS
+* Python/FastAPI
+* Java/Spring Boot
+* Other suitable options
+
+Recommend the best architecture based on:
+
+* AI integration
+* API performance
+* Scalability
+* Maintainability
+* Developer productivity
+
+Design:
+
+* REST API and/or GraphQL
+* Authentication
+* Authorization
+* User service
+* Nutrition service
+* Workout service
+* AI service
+* Analytics service
+* Notification service
+* File/image service
+
+Do not unnecessarily create microservices.
+
+If a modular monolith is better initially, recommend it.
+
+---
+
+# 26. DATABASE
+
+Design the complete database.
+
+Prefer a relational database for transactional data unless there is a strong reason otherwise.
+
+Potential entities include:
+
+users
+user_profiles
+user_goals
+user_measurements
+food_items
+food_nutrition
+food_categories
+recipes
+recipe_items
+meals
+meal_items
+meal_images
+nutrition_logs
+daily_nutrition_summary
+exercises
+workout_plans
+workout_plan_exercises
+workout_sessions
+workout_exercises
+workout_sets
+personal_records
+weight_history
+body_measurements
+ai_requests
+ai_responses
+notifications
+subscriptions
+devices
+audit_logs
+
+This is only an initial list.
+
+Create the proper normalized schema.
+
+For every table define:
+
+* Primary key
+* Foreign keys
+* Data types
+* Indexes
+* Unique constraints
+* Status fields
+* Created timestamp
+* Updated timestamp
+* Soft deletion strategy where required
+
+Consider historical data and analytics.
+
+---
+
+# 27. DATA ARCHITECTURE
+
+Design for potentially millions of users.
+
+Separate:
+
+Transactional workload
+
+from
+
+Analytics workload
+
+Consider whether we need:
+
+* PostgreSQL/MySQL
+* Redis
+* Object storage
+* Search engine
+* Data warehouse
+* OLAP database
+
+Do not introduce technologies simply because they are popular.
+
+Every component must have a reason.
+
+---
+
+# 28. IMAGE STORAGE
+
+Meal photos should NOT be stored directly inside the relational database.
+
+Design:
+
+Mobile
+→ API
+→ Object Storage
+→ AI processing
+→ Nutrition result
+→ Database metadata
+
+Consider:
+
+* Compression
+* Image resizing
+* Secure URLs
+* Encryption
+* Retention policy
+* Deletion
+* Privacy
+* CDN
+
+---
+
+# 29. AI ARCHITECTURE
+
+Design an abstraction layer around AI providers.
+
+Do not tightly couple the application to one AI provider.
+
+The architecture should allow:
+
+Provider A
+Provider B
+Provider C
+
+to be swapped.
+
+Define:
+
+AI gateway
+
+AI prompt management
+
+Model selection
+
+Token/cost tracking
+
+Request logging
+
+Response validation
+
+Safety filtering
+
+Retry handling
+
+Timeout handling
+
+Fallback models
+
+Structured JSON output
+
+AI confidence
+
+Human confirmation
+
+---
+
+# 30. AI COST CONTROL
+
+This is important.
+
+Food photo analysis and AI coaching can become expensive.
+
+Design:
+
+* Model routing
+* Caching
+* Request limits
+* Image compression
+* Prompt optimization
+* Smaller models for simple tasks
+* Larger models only when required
+* Usage tracking
+* Per-user limits
+* Subscription-based AI limits
+
+Estimate approximate AI cost per active user.
+
+---
+
+# 31. SECURITY
+
+Design production-grade security.
+
+Include:
+
+* JWT/session strategy
+* Refresh tokens
+* Password hashing
+* OAuth/social login
+* Role-based authorization
+* API rate limiting
+* Input validation
+* SQL injection prevention
+* XSS protection
+* CSRF protection where applicable
+* Secure file uploads
+* Image validation
+* Encryption
+* Secrets management
+* Audit logging
+* Account deletion
+* Data export
+* Privacy controls
+
+Never expose API keys to the mobile application.
+
+---
+
+# 32. PRIVACY
+
+The application may contain sensitive personal and health-related information.
+
+Design for:
+
+* Data minimization
+* Consent
+* Privacy policy requirements
+* User data deletion
+* Data export
+* Image deletion
+* AI data retention policy
+* Third-party AI provider policies
+* Encryption
+* Access controls
+
+Identify applicable privacy regulations based on target markets.
+
+Do not assume that because this is a fitness application, privacy is unimportant.
+
+---
+
+# 33. OFFLINE SUPPORT
+
+Consider whether the mobile app should support:
+
+* Offline workout logging
+* Offline meal logging
+* Offline profile access
+
+Then sync when internet becomes available.
+
+Design conflict resolution.
+
+---
+
+# 34. ADMIN PANEL
+
+Create an admin architecture.
+
+Admin should eventually manage:
+
+* Users
+* Food database
+* Exercise database
+* AI configurations
+* Reports
+* Flagged content
+* Subscription information
+* System health
+* AI usage
+* Failed AI requests
+
+Do not expose sensitive user information unnecessarily.
+
+---
+
+# 35. SUBSCRIPTION / MONETIZATION
+
+Design the architecture so monetization can be added.
+
+Potential model:
+
+FREE
+
+* Basic calorie tracking
+* Manual food logging
+* Basic workout logging
+* Limited AI
+
+PREMIUM
+
+* Unlimited AI food analysis
+* AI fitness coach
+* Advanced analytics
+* Personalized workout plans
+* Long-term reports
+* Advanced body analysis
+
+Do not implement payment immediately unless required.
+
+But make the architecture subscription-ready.
+
+---
+
+# 36. UI/UX DESIGN
+
+Recommend a modern premium fitness visual identity.
+
+Potential direction:
+
+Primary:
+Deep charcoal / near-black
+
+Secondary:
+White
+
+Accent:
+Energetic green or electric lime
+
+Supporting:
+Soft neutral gray
+
+The UI should feel:
+
+* Premium
+* Clean
+* Modern
+* Athletic
+* Trustworthy
+* Data-driven
+* Not overly flashy
+
+Avoid excessive gradients and excessive animations.
+
+Prioritize usability.
+
+---
+
+# 37. MOBILE NAVIGATION
+
+Propose an ideal navigation structure.
+
+Potential example:
+
+Home
+
+Meals
+
+Workout
+
+Progress
+
+AI Coach
+
+Profile
+
+But do not blindly use this structure.
+
+Design the best information architecture based on user behavior.
+
+---
+
+# 38. HOME SCREEN
+
+The home screen should answer these questions immediately:
+
+How many calories have I consumed?
+
+How many calories remain?
+
+Did I hit my protein target?
+
+Have I completed today's workout?
+
+What should I do next?
+
+How am I progressing?
+
+The dashboard should be actionable rather than just informational.
+
+---
+
+# 39. ERROR HANDLING
+
+Design proper handling for:
+
+AI unable to recognize food
+
+Poor image
+
+Multiple foods overlapping
+
+Unknown food
+
+AI confidence too low
+
+Network failure
+
+Duplicate meal
+
+Workout parsing failure
+
+Voice recognition failure
+
+Invalid user input
+
+Third-party API failure
+
+Database failure
+
+---
+
+# 40. OBSERVABILITY
+
+Design:
+
+* Application logs
+* API logs
+* Error tracking
+* Performance monitoring
+* AI latency
+* AI cost monitoring
+* Database monitoring
+* Queue monitoring
+* Background job monitoring
+
+Define useful metrics.
+
+---
+
+# 41. BACKGROUND JOBS
+
+Identify operations that should not happen synchronously.
+
+Examples:
+
+* AI image analysis
+* Weekly report generation
+* Monthly report generation
+* Notifications
+* Image processing
+* Analytics aggregation
+* AI embedding generation if required
+
+Recommend appropriate queue/background processing architecture.
+
+---
+
+# 42. TESTING
+
+Design:
+
+Unit tests
+
+Integration tests
+
+API tests
+
+Database tests
+
+AI response validation
+
+Mobile UI tests
+
+End-to-end tests
+
+Load tests
+
+Security tests
+
+Failure scenario tests
+
+Create a testing strategy before implementation.
+
+---
+
+# 43. CI/CD
+
+Design a production deployment pipeline.
+
+Consider:
+
+Development
+
+Staging
+
+Production
+
+Automated:
+
+* Linting
+* Tests
+* Build
+* Security scanning
+* Database migration validation
+* Deployment
+
+Recommend appropriate cloud architecture.
+
+Evaluate AWS/GCP/Azure or other options.
+
+---
+
+# 44. DEVELOPMENT PHASES
+
+Break the entire project into phases.
+
+For example:
+
+PHASE 0
+Product architecture
+
+PHASE 1
+Authentication + onboarding
+
+PHASE 2
+Profile + calorie engine
+
+PHASE 3
+Food database + manual logging
+
+PHASE 4
+AI food recognition
+
+PHASE 5
+Workout tracking
+
+PHASE 6
+Workout plans
+
+PHASE 7
+AI fitness coach
+
+PHASE 8
+Analytics
+
+PHASE 9
+Web dashboard
+
+PHASE 10
+Notifications
+
+PHASE 11
+Subscriptions
+
+PHASE 12
+Production hardening
+
+But determine the actual optimal order yourself.
+
+---
+
+# 45. MVP DEFINITION
+
+Clearly separate:
+
+MVP
+
+V1
+
+V2
+
+Future features
+
+Do not allow the MVP to become unnecessarily large.
+
+The MVP should validate the two main product loops:
+
+LOOP 1:
+
+Eat
+→ Capture food
+→ AI analyzes
+→ User confirms
+→ Nutrition logged
+→ Daily progress
+
+LOOP 2:
+
+Workout
+→ Log workout
+→ Track progression
+→ Weekly analysis
+→ Improve next workout
+
+---
+
+# 46. PRODUCT DATA FLOW
+
+Create detailed diagrams for:
+
+User registration
+
+Food photo analysis
+
+Manual food logging
+
+Barcode scanning
+
+Workout logging
+
+Voice logging
+
+AI coach
+
+Daily analytics
+
+Weekly analytics
+
+Authentication
+
+Image storage
+
+AI provider integration
+
+---
+
+# 47. API DESIGN
+
+Create an initial API specification.
+
+For every major API define:
+
+HTTP method
+
+Endpoint
+
+Request
+
+Response
+
+Authentication
+
+Validation
+
+Error response
+
+Example:
+
+POST /api/v1/meals/analyze-image
+
+POST /api/v1/meals
+
+GET /api/v1/nutrition/daily
+
+GET /api/v1/nutrition/weekly
+
+POST /api/v1/workouts
+
+POST /api/v1/workouts/parse-text
+
+POST /api/v1/workouts/parse-voice
+
+GET /api/v1/progress/weekly
+
+POST /api/v1/coach/chat
+
+Do not generate every endpoint blindly.
+
+Design a coherent API.
+
+---
+
+# 48. DATABASE PERFORMANCE
+
+Design indexes carefully.
+
+Consider:
+
+* High-frequency nutrition queries
+* Daily dashboard queries
+* Weekly analytics
+* Workout history
+* User-specific partitioning if eventually necessary
+* Aggregation tables
+* Materialized views where appropriate
+* Caching
+
+Avoid querying massive raw datasets for every dashboard request.
+
+---
+
+# 49. ANALYTICS ARCHITECTURE
+
+Design daily and weekly aggregation processes.
+
+Example:
+
+Raw meal logs
+
+↓
+
+Daily nutrition summary
+
+↓
+
+Weekly nutrition summary
+
+↓
+
+Monthly nutrition summary
+
+Similarly:
+
+Raw workout logs
+
+↓
+
+Daily workout summary
+
+↓
+
+Weekly workout summary
+
+↓
+
+Monthly workout summary
+
+This should allow dashboards to remain fast as the system grows.
+
+---
+
+# 50. AI COACH CONTEXT
+
+Design exactly how the AI coach retrieves relevant user data.
+
+For example:
+
+User asks:
+
+"Why am I not losing weight?"
+
+The AI should potentially retrieve:
+
+* Recent weight trend
+* Calorie intake
+* Workout frequency
+* Goal
+* Estimated calorie target
+* Recent adherence
+* Meal patterns
+
+It should not blindly send the entire user history.
+
+Design a tool/function-based architecture.
+
+---
+
+# 51. FOOD DATABASE QUALITY
+
+Nutrition accuracy is critical.
+
+Research appropriate food data sources.
+
+The architecture should support:
+
+* Standard foods
+* Indian foods
+* Packaged products
+* Custom foods
+* Recipes
+* User corrections
+
+Track the source of nutritional information.
+
+Example:
+
+source_type:
+
+USDA
+OpenFoodFacts
+Admin
+User
+AI estimate
+
+---
+
+# 52. AI SAFETY
+
+The AI fitness coach must not pretend to be a doctor.
+
+Create clear boundaries for:
+
+* Medical conditions
+* Eating disorders
+* Severe calorie restriction
+* Injury
+* Medication
+* Dangerous exercise recommendations
+
+For high-risk questions, recommend professional medical/fitness advice instead of making unsupported recommendations.
+
+---
+
+# 53. USER EXPERIENCE PRINCIPLE
+
+The application must minimize user effort.
+
+The ideal flow should be:
+
+Take photo
+
+↓
+
+AI recognizes food
+
+↓
+
+User confirms
+
+↓
+
+Done
+
+Similarly:
+
+Say workout
+
+↓
+
+AI structures workout
+
+↓
+
+User confirms
+
+↓
+
+Done
+
+The product should reduce manual data entry as much as reasonably possible.
+
+---
+
+# 54. IMPORTANT AI LIMITATION
+
+Do not claim:
+
+"AI can accurately determine the exact weight of food from any photograph."
+
+Instead design an estimation system.
+
+Example:
+
+AI:
+
+"Estimated 150–180g sweet potato"
+
+User:
+
+"Actually 200g"
+
+Then update the meal.
+
+The UI should make this correction extremely easy.
+
+---
+
+# 55. PRODUCT DIFFERENTIATION
+
+Think about what could make this product significantly better than:
+
+* MyFitnessPal
+* HealthifyMe
+* Fitbod
+* Strong
+* Hevy
+* Lose It!
+* Cronometer
+
+Identify opportunities to differentiate.
+
+Potential differentiator:
+
+**AI-first food + workout journal**
+
+The user should be able to simply:
+
+"Take a picture of what I ate."
+
+and
+
+"Tell the app what I did at the gym."
+
+The application converts unstructured real-world behavior into structured fitness data.
+
+---
+
+# 56. FUTURE FEATURES
+
+Consider but do not prioritize for MVP:
+
+* Smartwatch integration
+* Apple Health
+* Google Health Connect
+* Fitbit
+* Garmin
+* Samsung Health
+* Smart scales
+* Sleep tracking
+* Heart rate
+* Steps
+* Calories burned
+* Wearable recovery metrics
+* Social/community
+* Trainer marketplace
+* Human coaches
+* AI-generated meal plans
+* Grocery lists
+* Restaurant menu analysis
+* Restaurant food photo analysis
+* Location-aware food suggestions
+* Family accounts
+
+---
+
+# 57. DELIVERABLES FROM THIS PLANNING PHASE
+
+Before writing implementation code, create the following documentation:
+
+1. Product Requirements Document
+
+2. Complete feature list
+
+3. MVP scope
+
+4. V1 scope
+
+5. User journeys
+
+6. System architecture
+
+7. Mobile architecture
+
+8. Web architecture
+
+9. Backend architecture
+
+10. AI architecture
+
+11. Database ERD
+
+12. Database schema
+
+13. API specification
+
+14. Authentication architecture
+
+15. Food recognition pipeline
+
+16. Workout parsing pipeline
+
+17. AI coach architecture
+
+18. Analytics architecture
+
+19. Infrastructure architecture
+
+20. Security architecture
+
+21. Privacy architecture
+
+22. Testing strategy
+
+23. CI/CD strategy
+
+24. Monitoring strategy
+
+25. Development roadmap
+
+26. Estimated infrastructure costs
+
+27. Estimated AI costs
+
+28. Major technical risks
+
+29. Recommended technology stack
+
+30. Project folder structure
+
+31. Coding standards
+
+32. Git branching strategy
+
+33. Environment configuration strategy
+
+34. Database migration strategy
+
+35. API versioning strategy
+
+---
+
+# 58. TECHNOLOGY SELECTION
+
+Do not assume my technology preferences.
+
+Evaluate suitable options and recommend the stack.
+
+For every major technology, provide:
+
+Technology
+
+Reason
+
+Alternative
+
+Why the alternative was rejected
+
+Expected scale
+
+Operational complexity
+
+Cost implication
+
+Example categories:
+
+Mobile
+
+Web
+
+Backend
+
+Database
+
+Cache
+
+Queue
+
+Object storage
+
+AI/LLM
+
+Computer vision
+
+Speech-to-text
+
+Authentication
+
+Monitoring
+
+Analytics
+
+Cloud
+
+CI/CD
+
+---
+
+# 59. PROJECT STRUCTURE
+
+Design a clean repository structure.
+
+For example, potentially:
+
+/mobile
+/web
+/backend
+/ai
+/database
+/infrastructure
+/docs
+
+But determine the best structure.
+
+The project must be maintainable by multiple developers.
+
+---
+
+# 60. ENGINEERING PRINCIPLES
+
+Follow these principles:
+
+* Clean architecture
+* SOLID
+* DRY
+* KISS
+* Strong typing
+* API versioning
+* Secure by default
+* Observable by default
+* Testable architecture
+* Database migrations
+* Environment-based configuration
+* No hardcoded secrets
+* No hardcoded AI provider
+* No business logic inside UI
+* No unnecessary microservices
+* No premature optimization
+* No unnecessary dependencies
+
+---
+
+# 61. WHAT I EXPECT FROM YOU NOW
+
+Since we are currently in PLANNING MODE:
+
+DO NOT IMPLEMENT THE APPLICATION YET.
+
+First analyze this entire product.
+
+Then give me:
+
+## SECTION A — PRODUCT UNDERSTANDING
+
+Restate the product in your own words.
+
+Identify the two primary product loops.
+
+## SECTION B — ASSUMPTIONS
+
+List assumptions you had to make.
+
+## SECTION C — QUESTIONS
+
+Ask only questions that genuinely affect architecture or product decisions.
+
+Do not ask questions whose answers can safely be decided by you.
+
+For each question, explain why the answer matters.
+
+## SECTION D — RECOMMENDED TECH STACK
+
+Give your recommendation and alternatives.
+
+## SECTION E — SYSTEM ARCHITECTURE
+
+Provide a detailed architecture diagram using Mermaid where appropriate.
+
+## SECTION F — DATABASE
+
+Provide the initial ERD and proposed schema.
+
+## SECTION G — API
+
+Provide the initial API architecture.
+
+## SECTION H — AI ARCHITECTURE
+
+Explain the food recognition pipeline, workout parsing and AI coach.
+
+## SECTION I — MOBILE UX
+
+Define the major screens and navigation.
+
+## SECTION J — WEB UX
+
+Define the major web screens.
+
+## SECTION K — MVP
+
+Clearly define what MUST be built first.
+
+## SECTION L — ROADMAP
+
+Give a phased implementation plan.
+
+## SECTION M — RISKS
+
+Identify technical, AI, product, security and cost risks.
+
+## SECTION N — COST
+
+Give a rough development and infrastructure cost model.
+
+## SECTION O — FINAL RECOMMENDATION
+
+Give me your recommended architecture and explain why.
+
+---
+
+# 62. IMPORTANT WORKING RULE
+
+Do not start implementation until the architecture and MVP scope are agreed.
+
+Once the planning phase is complete, wait for my instruction:
+
+"START IMPLEMENTATION"
+
+Only then begin generating the actual project.
+
+When implementation starts:
+
+1. Build incrementally.
+2. Keep commits/features logically separated.
+3. Do not create huge files unnecessarily.
+4. Do not duplicate business logic.
+5. Write tests alongside important functionality.
+6. Keep documentation updated.
+7. Explain major architectural decisions.
+8. Never hardcode credentials.
+9. Never expose AI/API secrets in mobile/web clients.
+10. Treat AI output as untrusted data and validate it before storing it.
+11. Use database migrations.
+12. Maintain backward compatibility for APIs where appropriate.
+13. Build production-quality code, not demo code.
+
+---
+
+# FINAL PRODUCT VISION
+
+The final application should feel like a combination of:
+
+AI Nutritionist
++
+AI Fitness Coach
++
+Food Journal
++
+Workout Journal
++
+Progress Analytics
+
+The key differentiator is that the user should not have to manually enter everything.
+
+The system should transform natural user behavior into structured fitness data:
+
+PHOTO
+→ FOOD RECOGNITION
+→ NUTRITION ESTIMATION
+→ USER CONFIRMATION
+→ MEAL LOG
+→ DAILY ANALYTICS
+→ WEEKLY INSIGHTS
+
+and:
+
+TEXT / VOICE / MANUAL WORKOUT
+→ WORKOUT PARSING
+→ STRUCTURED WORKOUT
+→ WORKOUT HISTORY
+→ PROGRESSION ANALYSIS
+→ WEEKLY INSIGHTS
+→ NEXT WORKOUT RECOMMENDATION
+
+The long-term goal is to create a personal fitness intelligence platform that continuously learns from the user's food, workouts, measurements and progress and provides increasingly useful recommendations while keeping the user in control of their data and corrections.
+
+Start with the planning analysis now.
+
+DO NOT WRITE APPLICATION CODE YET.

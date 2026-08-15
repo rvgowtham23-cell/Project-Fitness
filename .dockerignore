@@ -1,0 +1,17 @@
+# Applies to any `docker build` run with the monorepo root as context
+# (e.g. apps/backend/Dockerfile, apps/web/Dockerfile).
+
+**/node_modules/
+**/.venv/
+**/__pycache__/
+**/dist/
+**/.next/
+**/.turbo/
+**/coverage/
+.git/
+infrastructure/
+.github/
+*.md
+.env
+**/.env
+!**/.env.example
