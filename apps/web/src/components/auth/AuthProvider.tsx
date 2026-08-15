@@ -40,9 +40,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const { user: loggedInUser } = await apiLogin(email, password);
-      setUser(loggedInUser);
-      setStatus('authenticated');
+      await apiLogin(email, password);
+      // The login response never carries user info (the backend's /auth/login only returns
+      // tokens) — re-fetch the session so it's decoded from the cookie the same way as on
+      // initial page load, instead of trusting a field that's always null.
+      const session = await getSession();
+      setUser(session.user);
+      setStatus(session.authenticated ? 'authenticated' : 'unauthenticated');
       router.push('/dashboard');
     },
     [router],

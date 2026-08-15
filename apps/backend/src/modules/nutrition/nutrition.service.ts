@@ -87,12 +87,17 @@ export class NutritionService {
       if (!summary) {
         summary = summaryRepo.create({ userId, summaryDate });
       }
-      summary.totalCalories = Number(summary.totalCalories) + Number(savedMeal.totalCalories);
-      summary.totalProteinG = Number(summary.totalProteinG) + Number(savedMeal.totalProteinG);
-      summary.totalCarbsG = Number(summary.totalCarbsG) + Number(savedMeal.totalCarbsG);
-      summary.totalFatG = Number(summary.totalFatG) + Number(savedMeal.totalFatG);
-      summary.totalFiberG = Number(summary.totalFiberG) + Number(savedMeal.totalFiberG);
-      summary.mealCount = Number(summary.mealCount) + 1;
+      // A freshly-`create()`d entity only has the fields passed in above — the other
+      // columns' DB-side defaults are not reflected on the JS object until after a save+reload,
+      // so every field here needs its own `?? 0` rather than trusting Number(undefined).
+      summary.totalCalories =
+        Number(summary.totalCalories ?? 0) + Number(savedMeal.totalCalories);
+      summary.totalProteinG =
+        Number(summary.totalProteinG ?? 0) + Number(savedMeal.totalProteinG);
+      summary.totalCarbsG = Number(summary.totalCarbsG ?? 0) + Number(savedMeal.totalCarbsG);
+      summary.totalFatG = Number(summary.totalFatG ?? 0) + Number(savedMeal.totalFatG);
+      summary.totalFiberG = Number(summary.totalFiberG ?? 0) + Number(savedMeal.totalFiberG);
+      summary.mealCount = Number(summary.mealCount ?? 0) + 1;
       if (activeGoal) {
         summary.targetCalories = activeGoal.calorieTarget;
         summary.targetProteinG = Number(activeGoal.proteinTargetG);
