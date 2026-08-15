@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import type { SourceType } from '@fitness/shared-types';
 import { FoodItem } from './food-item.entity';
-import { SOURCE_TYPES } from './food-item.entity';
+import { SOURCE_TYPES } from './source-type.const';
 
 // Per-100g reference values. Meal-time consumption values are always computed from this plus
 // the logged quantity/weight, then snapshotted onto meal_items — never read live from here at

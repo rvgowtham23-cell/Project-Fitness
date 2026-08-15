@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import type { SourceType } from '@fitness/shared-types';
 import { Meal } from './meal.entity';
-import { SOURCE_TYPES } from './food-item.entity';
+import { SOURCE_TYPES } from './source-type.const';
 
 // Nutrition values are denormalized (snapshotted) at log time so a later admin correction to a
 // food_nutrition reference row never silently rewrites historical dashboards (architecture plan

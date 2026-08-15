@@ -16,7 +16,7 @@ import {
 } from 'class-validator';
 import type { SourceType } from '@fitness/shared-types';
 import { MealInputMethod, MealType } from '../entities/meal.entity';
-import { SOURCE_TYPES } from '../entities/food-item.entity';
+import { SOURCE_TYPES } from '../entities/source-type.const';
 
 export class CreateMealItemDto {
   @IsOptional()

@@ -14,7 +14,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import type { SourceType } from '@fitness/shared-types';
-import { SOURCE_TYPES } from '../../nutrition/entities/food-item.entity';
+import { SOURCE_TYPES } from '../../nutrition/entities/source-type.const';
 
 // Runtime validation of the AI service's response shape — mirrors AnalyzeMealImageResponse /
 // MealItemEstimate from @fitness/shared-types. AI output is untrusted input (architecture plan

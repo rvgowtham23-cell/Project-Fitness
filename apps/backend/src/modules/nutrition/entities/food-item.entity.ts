@@ -9,15 +9,7 @@ import {
 } from 'typeorm';
 import type { SourceType } from '@fitness/shared-types';
 import { FoodNutrition } from './food-nutrition.entity';
-
-export const SOURCE_TYPES: SourceType[] = [
-  'USDA',
-  'IFCT',
-  'OPENFOODFACTS',
-  'ADMIN',
-  'USER',
-  'AI_ESTIMATE',
-];
+import { SOURCE_TYPES } from './source-type.const';
 
 // `pg_trgm` GIN index on `name` (created in the migration) backs fuzzy food search
 // (GET /foods/search) without standing up a dedicated search engine — see architecture plan §D.
