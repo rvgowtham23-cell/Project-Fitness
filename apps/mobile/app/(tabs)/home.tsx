@@ -7,10 +7,11 @@ import {
   useMealsForDate,
   useNutritionTargets,
 } from '../../src/features/nutrition/use-daily-nutrition';
-import { useWorkoutsForDate } from '../../src/features/workout/use-workout';
+import { useExercises, useWorkoutsForDate } from '../../src/features/workout/use-workout';
 import { CalorieSummaryCard } from '../../src/components/home/CalorieSummaryCard';
 import { MacroProgressGrid } from '../../src/components/home/MacroProgressGrid';
 import { TodayMealsList } from '../../src/components/home/TodayMealsList';
+import { TodayWorkoutsList } from '../../src/components/home/TodayWorkoutsList';
 import { Button, Card, ErrorState, LoadingState, Screen } from '../../src/components/ui';
 import { colors, spacing, typography } from '../../src/theme';
 import type { TodayMealSummary } from '../../src/types/api';
@@ -22,8 +23,10 @@ export default function HomeScreen() {
   const targetsQuery = useNutritionTargets();
   const mealsQuery = useMealsForDate(today);
   const workoutsQuery = useWorkoutsForDate(today);
+  const exercisesQuery = useExercises();
 
   const workedOutToday = (workoutsQuery.data?.length ?? 0) > 0;
+  const exercisesById = new Map((exercisesQuery.data ?? []).map((ex) => [ex.id, ex]));
   const todayMeals: TodayMealSummary[] = (mealsQuery.data ?? []).map((meal) => ({
     id: meal.id,
     name: meal.items.map((item) => item.foodName).join(', ') || meal.mealType,
@@ -100,6 +103,11 @@ export default function HomeScreen() {
           </View>
         )}
       </Card>
+      {!workoutsQuery.isError && workedOutToday && (
+        <View style={styles.workoutsList}>
+          <TodayWorkoutsList sessions={workoutsQuery.data ?? []} exercisesById={exercisesById} />
+        </View>
+      )}
 
       <Text style={[typography.h3, styles.sectionTitle]}>Today's meals</Text>
       {mealsQuery.isError ? (
@@ -126,6 +134,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { marginBottom: spacing.md, marginTop: spacing.xs },
   workoutCard: { marginBottom: spacing.xl },
+  workoutsList: { marginTop: -spacing.md, marginBottom: spacing.xl },
   workoutRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   workoutIconWrap: {
     width: 40,

@@ -72,10 +72,19 @@ export interface MealRecord {
   items: Array<{ foodName: string }>;
 }
 
-// Mirrors WorkoutSession as returned by GET /workouts?date=.
+// Mirrors WorkoutSession as returned by GET /workouts?date= (relations: exercises, exercises.sets
+// — see workout.service.ts's getSessionsForDate). exerciseId only, no exercise name: the
+// backend doesn't join the Exercise entity here, so callers resolve names against the
+// already-cached GET /exercises library (see useExercises()) instead of adding a relation
+// just for display.
 export interface WorkoutSessionRecord {
   id: string;
   startedAt: string;
+  exercises: Array<{
+    id: string;
+    exerciseId: string;
+    sets: Array<{ setNumber: number; weightKg: number | null; reps: number | null }>;
+  }>;
 }
 
 export interface OnboardingDraft {
