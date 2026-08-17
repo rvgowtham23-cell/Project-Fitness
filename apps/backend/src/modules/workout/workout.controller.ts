@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { IsISO8601 } from 'class-validator';
 
 import { JwtAuthGuard } from '../identity/guards/jwt-auth.guard';
@@ -31,5 +31,11 @@ export class WorkoutController {
   @Post('workouts')
   createWorkout(@CurrentUser() user: JwtPrincipal, @Body() dto: CreateWorkoutDto) {
     return this.workoutService.createWorkout(user.userId, dto);
+  }
+
+  @Delete('workouts/:id')
+  @HttpCode(204)
+  deleteWorkout(@CurrentUser() user: JwtPrincipal, @Param('id') id: string) {
+    return this.workoutService.deleteWorkout(user.userId, id);
   }
 }

@@ -13,7 +13,7 @@ import { toOnboardingPayload } from '../../src/lib/onboarding-mapper';
 // immediate, concrete payoff (your numbers) rather than just dumping the user into an
 // empty dashboard.
 export default function TargetsScreen() {
-  const { draft, completeOnboarding } = useOnboarding();
+  const { draft } = useOnboarding();
   const [targets, setTargets] = useState<NutritionTargets | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -46,7 +46,6 @@ export default function TargetsScreen() {
   }
 
   function finish() {
-    completeOnboarding();
     router.replace('/(tabs)/home');
   }
 

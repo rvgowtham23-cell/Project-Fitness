@@ -62,14 +62,32 @@ export interface TodayMealSummary {
   calories: number;
 }
 
+// Mirrors the backend's MealItem entity — full shape needed to populate the edit screen (a
+// thinner {foodName} projection was enough for the Home dashboard's list view, not for editing).
+export interface MealItemRecord {
+  id: string;
+  foodName: string;
+  quantity: number;
+  unit: string;
+  weightG: number | null;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fiberG: number;
+  confidence: number | null;
+  sourceType: SourceType;
+}
+
 // Mirrors the backend's Meal entity (apps/backend/src/modules/nutrition/entities/meal.entity.ts)
-// as returned by GET /meals?date= — field names match TypeORM's camelCase JSON serialization.
+// as returned by GET /meals?date= and GET /meals/:id — field names match TypeORM's camelCase
+// JSON serialization.
 export interface MealRecord {
   id: string;
   mealType: string;
   loggedAt: string;
   totalCalories: number;
-  items: Array<{ foodName: string }>;
+  items: MealItemRecord[];
 }
 
 // Mirrors WorkoutSession as returned by GET /workouts?date= (relations: exercises, exercises.sets

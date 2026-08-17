@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, EntityManager, Repository } from 'typeorm';
 import type {
   AnalyzeMealImageResponse,
   DailyNutritionSummary as DailyNutritionSummaryDto,
@@ -133,6 +133,135 @@ export class NutritionService {
     });
   }
 
+  async updateMeal(userId: string, mealId: string, dto: CreateMealDto): Promise<Meal> {
+    return this.meals.manager.transaction(async (manager) => {
+      const mealRepo = manager.getRepository(Meal);
+      const existing = await mealRepo.findOne({ where: { id: mealId, userId }, relations: ['items'] });
+      if (!existing) {
+        throw new NotFoundException('Meal not found');
+      }
+
+      const oldSummaryDate = existing.loggedAt.toISOString().slice(0, 10);
+      const oldTotals = {
+        calories: -Number(existing.totalCalories),
+        proteinG: -Number(existing.totalProteinG),
+        carbsG: -Number(existing.totalCarbsG),
+        fatG: -Number(existing.totalFatG),
+        fiberG: -Number(existing.totalFiberG),
+        mealCountDelta: -1,
+      };
+
+      const resolvedItems = await Promise.all(
+        dto.items.map((item) => this.resolveMealItem(manager.getRepository(FoodNutrition), item)),
+      );
+
+      // Replace items wholesale rather than trying to diff/patch individual rows — matches
+      // the "user can edit the amount/nutrition manually" requirement without needing a
+      // separate per-item update path.
+      await manager.getRepository(MealItem).delete({ mealId: existing.id });
+
+      const loggedAt = new Date(dto.loggedAt);
+      existing.mealType = dto.mealType;
+      existing.loggedAt = loggedAt;
+      existing.notes = dto.notes ?? null;
+      existing.totalCalories = this.sum(resolvedItems, 'calories');
+      existing.totalProteinG = this.sum(resolvedItems, 'proteinG');
+      existing.totalCarbsG = this.sum(resolvedItems, 'carbsG');
+      existing.totalFatG = this.sum(resolvedItems, 'fatG');
+      existing.totalFiberG = this.sum(resolvedItems, 'fiberG');
+      existing.items = resolvedItems.map((item) => manager.getRepository(MealItem).create(item));
+
+      const savedMeal = await mealRepo.save(existing);
+
+      await manager
+        .getRepository(NutritionLog)
+        .update(
+          { mealId: savedMeal.id },
+          {
+            loggedAt,
+            calories: savedMeal.totalCalories,
+            proteinG: savedMeal.totalProteinG,
+            carbsG: savedMeal.totalCarbsG,
+            fatG: savedMeal.totalFatG,
+            fiberG: savedMeal.totalFiberG,
+          },
+        );
+
+      const newSummaryDate = loggedAt.toISOString().slice(0, 10);
+
+      // Subtract the meal's pre-edit contribution from its original day, then add the
+      // post-edit contribution to its (possibly different, if loggedAt changed) day — two
+      // single-day adjustments, never a recompute from raw logs.
+      await this.adjustDailySummary(manager, userId, oldSummaryDate, oldTotals);
+      await this.adjustDailySummary(manager, userId, newSummaryDate, {
+        calories: Number(savedMeal.totalCalories),
+        proteinG: Number(savedMeal.totalProteinG),
+        carbsG: Number(savedMeal.totalCarbsG),
+        fatG: Number(savedMeal.totalFatG),
+        fiberG: Number(savedMeal.totalFiberG),
+        mealCountDelta: 1,
+      });
+
+      return savedMeal;
+    });
+  }
+
+  async deleteMeal(userId: string, mealId: string): Promise<void> {
+    await this.meals.manager.transaction(async (manager) => {
+      const mealRepo = manager.getRepository(Meal);
+      const existing = await mealRepo.findOne({ where: { id: mealId, userId } });
+      if (!existing) {
+        throw new NotFoundException('Meal not found');
+      }
+
+      const summaryDate = existing.loggedAt.toISOString().slice(0, 10);
+
+      // nutrition_logs.meal_id is ON DELETE SET NULL (not CASCADE) — its calorie/macro
+      // snapshot columns would otherwise survive as an orphaned row after the meal is gone.
+      await manager.getRepository(NutritionLog).delete({ mealId: existing.id });
+      await mealRepo.remove(existing); // cascades to meal_items/meal_images via DB FK
+
+      await this.adjustDailySummary(manager, userId, summaryDate, {
+        calories: -Number(existing.totalCalories),
+        proteinG: -Number(existing.totalProteinG),
+        carbsG: -Number(existing.totalCarbsG),
+        fatG: -Number(existing.totalFatG),
+        fiberG: -Number(existing.totalFiberG),
+        mealCountDelta: -1,
+      });
+    });
+  }
+
+  // Shared by updateMeal/deleteMeal (createMeal keeps its own inline upsert — the two paths
+  // never needed to share code until edit/delete introduced negative deltas). Clamps at zero
+  // so an edit/delete ordering quirk can't push the summary negative.
+  private async adjustDailySummary(
+    manager: EntityManager,
+    userId: string,
+    summaryDate: string,
+    delta: {
+      calories: number;
+      proteinG: number;
+      carbsG: number;
+      fatG: number;
+      fiberG: number;
+      mealCountDelta: number;
+    },
+  ): Promise<void> {
+    const summaryRepo = manager.getRepository(DailyNutritionSummary);
+    let summary = await summaryRepo.findOne({ where: { userId, summaryDate } });
+    if (!summary) {
+      summary = summaryRepo.create({ userId, summaryDate });
+    }
+    summary.totalCalories = Math.max(0, Number(summary.totalCalories ?? 0) + delta.calories);
+    summary.totalProteinG = Math.max(0, Number(summary.totalProteinG ?? 0) + delta.proteinG);
+    summary.totalCarbsG = Math.max(0, Number(summary.totalCarbsG ?? 0) + delta.carbsG);
+    summary.totalFatG = Math.max(0, Number(summary.totalFatG ?? 0) + delta.fatG);
+    summary.totalFiberG = Math.max(0, Number(summary.totalFiberG ?? 0) + delta.fiberG);
+    summary.mealCount = Math.max(0, Number(summary.mealCount ?? 0) + delta.mealCountDelta);
+    await summaryRepo.save(summary);
+  }
+
   async lookupBarcode(code: string): Promise<BarcodeLookupResponse> {
     if (!/^\d{8,14}$/.test(code)) {
       throw new BadRequestException('Barcode must be 8-14 digits');
@@ -209,6 +338,14 @@ export class NutritionService {
       relations: ['items'],
       order: { loggedAt: 'ASC' },
     });
+  }
+
+  async getMealById(userId: string, mealId: string): Promise<Meal> {
+    const meal = await this.meals.findOne({ where: { id: mealId, userId }, relations: ['items'] });
+    if (!meal) {
+      throw new NotFoundException('Meal not found');
+    }
+    return meal;
   }
 
   async getDailySummary(userId: string, date: string): Promise<DailyNutritionSummaryDto> {

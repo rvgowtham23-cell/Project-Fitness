@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, ILike, In, Repository } from 'typeorm';
 
@@ -122,5 +122,18 @@ export class WorkoutService {
         isCurrent: true,
       }),
     );
+  }
+
+  async deleteWorkout(userId: string, sessionId: string): Promise<void> {
+    const session = await this.sessions.findOne({ where: { id: sessionId, userId } });
+    if (!session) {
+      throw new NotFoundException('Workout session not found');
+    }
+    // Cascades to workout_exercises -> workout_sets via DB FK. Unlike meals, there's no
+    // daily_workout_summary to adjust. Known gap: if a deleted session held the current PR
+    // for an exercise, personal_records.is_current is left pointing at a value that's no
+    // longer backed by any set — recomputing it would mean rescanning that exercise's full
+    // remaining history, which is more than this delete operation should take on; deferred.
+    await this.sessions.remove(session);
   }
 }

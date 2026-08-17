@@ -34,3 +34,13 @@ export function useSaveWorkout() {
     },
   });
 }
+
+export function useDeleteWorkout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.deleteWorkout(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+  });
+}

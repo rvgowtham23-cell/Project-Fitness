@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../identity/guards/jwt-auth.guard';
 import { CurrentUser } from '../identity/decorators/current-user.decorator';
@@ -31,6 +31,26 @@ export class NutritionController {
   @Get('meals')
   getMealsForDate(@CurrentUser() user: JwtPrincipal, @Query() query: DailyNutritionQueryDto) {
     return this.nutritionService.getMealsForDate(user.userId, query.date);
+  }
+
+  @Get('meals/:id')
+  getMealById(@CurrentUser() user: JwtPrincipal, @Param('id') id: string) {
+    return this.nutritionService.getMealById(user.userId, id);
+  }
+
+  @Patch('meals/:id')
+  updateMeal(
+    @CurrentUser() user: JwtPrincipal,
+    @Param('id') id: string,
+    @Body() dto: CreateMealDto,
+  ) {
+    return this.nutritionService.updateMeal(user.userId, id, dto);
+  }
+
+  @Delete('meals/:id')
+  @HttpCode(204)
+  deleteMeal(@CurrentUser() user: JwtPrincipal, @Param('id') id: string) {
+    return this.nutritionService.deleteMeal(user.userId, id);
   }
 
   @Post('foods/barcode/:code')

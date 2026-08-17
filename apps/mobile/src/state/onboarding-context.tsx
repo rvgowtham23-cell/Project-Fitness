@@ -17,29 +17,25 @@ const emptyDraft: OnboardingDraft = {
 };
 
 interface OnboardingContextValue {
-  isOnboarded: boolean;
   draft: OnboardingDraft;
   updateDraft: (partial: Partial<OnboardingDraft>) => void;
-  completeOnboarding: () => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 
+// Holds only the in-progress onboarding form draft. Whether onboarding is actually complete
+// is a backend fact (UserProfile.onboardingCompletedAt), checked once at app boot by
+// useAppBootstrap — not tracked here, since anything kept only in this in-memory context
+// resets on every JS reload/cold start.
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
-  // In-memory only for this scaffold — a real build persists this flag (SecureStore/
-  // AsyncStorage) and cross-checks it against the user's profile on the backend, so
-  // "shown once" survives app restarts and reinstall-on-existing-account.
-  const [isOnboarded, setIsOnboarded] = useState(false);
   const [draft, setDraft] = useState<OnboardingDraft>(emptyDraft);
 
   const value = useMemo<OnboardingContextValue>(
     () => ({
-      isOnboarded,
       draft,
       updateDraft: (partial) => setDraft((prev) => ({ ...prev, ...partial })),
-      completeOnboarding: () => setIsOnboarded(true),
     }),
-    [isOnboarded, draft],
+    [draft],
   );
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

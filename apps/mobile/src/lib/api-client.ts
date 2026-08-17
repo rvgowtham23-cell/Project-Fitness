@@ -158,7 +158,23 @@ export const apiClient = {
   // fixed above — silently showing an empty list on a network blip would reintroduce the
   // same "looks fine, nothing actually happened" trust problem for a read instead of a write.
   getMealsForDate: (date: string) => request<MealRecord[]>(`/meals?date=${date}`),
+  getMealById: (id: string) => request<MealRecord>(`/meals/${id}`),
   getWorkoutsForDate: (date: string) => request<WorkoutSessionRecord[]>(`/workouts?date=${date}`),
+
+  // Used on app boot to decide whether to skip straight to Home (profile.onboardingCompletedAt
+  // set) or resume onboarding — see src/hooks/use-app-bootstrap.ts. A 404 ApiError means the
+  // user is authenticated but has never completed onboarding.
+  getProfile: () =>
+    request<{ profile: { onboardingCompletedAt: string | null }; activeGoal: unknown }>('/profile'),
+
+  deleteMeal: (id: string) => request<void>(`/meals/${id}`, { method: 'DELETE' }),
+  updateMeal: (id: string, payload: SaveMealPayload, mealType: MealTypeValue) =>
+    request<MealRecord>(`/meals/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(toCreateMealPayload(payload, mealType)),
+    }),
+
+  deleteWorkout: (id: string) => request<void>(`/workouts/${id}`, { method: 'DELETE' }),
 
   getDailyNutrition: (date: string) =>
     withMockFallback(

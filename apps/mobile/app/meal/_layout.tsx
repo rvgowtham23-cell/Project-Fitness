@@ -5,6 +5,7 @@ export default function MealLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="confirm" />
+      <Stack.Screen name="edit/[id]" />
     </Stack>
   );
 }
