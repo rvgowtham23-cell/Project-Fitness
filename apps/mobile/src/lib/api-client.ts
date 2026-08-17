@@ -5,7 +5,7 @@ import type {
   ParsedWorkoutResponse,
 } from '@fitness/shared-types';
 import { API_BASE_URL } from './config';
-import { getAccessToken, saveTokens } from './auth-storage';
+import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from './auth-storage';
 import {
   mockAnalyzeMealImageResponse,
   mockBarcodeProduct,
@@ -40,7 +40,46 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+// Access tokens are short-lived (15 min — see architecture-plan.md §D). Without this, every
+// screen open past that window silently returns 401s that calling code has no way to
+// distinguish from "no data" (see e.g. the Home dashboard's workout/meal queries, which
+// aren't error-gated the way the main summary queries are) — the dashboard just goes quietly
+// stale instead of showing an error or recovering.
+let refreshPromise: Promise<string | null> | null = null;
+
+async function performRefresh(): Promise<string | null> {
+  const refreshToken = await getRefreshToken();
+  if (!refreshToken) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { accessToken: string; refreshToken: string };
+    await saveTokens(body.accessToken, body.refreshToken);
+    return body.accessToken;
+  } catch {
+    return null;
+  }
+}
+
+// The backend rotates refresh tokens and treats reuse of an already-rotated-out token as
+// theft, revoking the whole session (architecture-plan.md §D). If two requests 401 around the
+// same time and each fired its own refresh call, the second would present the now-stale
+// refresh token and get the user logged out entirely — so every concurrent 401 shares one
+// in-flight refresh instead of racing.
+function refreshAccessToken(): Promise<string | null> {
+  if (!refreshPromise) {
+    refreshPromise = performRefresh().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+async function request<T>(path: string, init?: RequestInit, isRetry = false): Promise<T> {
   const token = await getAccessToken();
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -50,6 +89,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...(init?.headers ?? {}),
     },
   });
+
+  if (res.status === 401 && !isRetry && !path.startsWith('/auth/')) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      return request<T>(path, init, true);
+    }
+    // Refresh token is gone/expired/revoked — nothing left to retry with. Callers see this
+    // as a normal ApiError(401); there's no global "session expired, please log in again"
+    // redirect yet (TODO, same deferred-auth-UX gap as OAuth).
+    await clearTokens();
+  }
 
   if (!res.ok) {
     let message = `Request failed: ${res.status}`;

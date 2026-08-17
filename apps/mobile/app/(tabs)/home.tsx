@@ -66,35 +66,53 @@ export default function HomeScreen() {
       <MacroProgressGrid summary={summary} targets={targets} />
 
       <Card style={styles.workoutCard}>
-        <View style={styles.workoutRow}>
-          <View style={styles.workoutIconWrap}>
-            <Ionicons
-              name={workedOutToday ? 'checkmark-circle' : 'barbell-outline'}
-              size={22}
-              color={workedOutToday ? colors.success : colors.textSecondary}
-            />
+        {workoutsQuery.isError ? (
+          <View style={styles.workoutRow}>
+            <Ionicons name="alert-circle-outline" size={22} color={colors.danger} />
+            <Text style={[typography.bodyMedium, { flex: 1 }]}>Couldn't check today's workouts.</Text>
+            <Button label="Retry" onPress={() => workoutsQuery.refetch()} variant="outline" fullWidth={false} />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={typography.bodyMedium}>
-              {workedOutToday ? 'Workout logged today' : 'No workout logged yet'}
-            </Text>
-            <Text style={typography.caption}>
-              {workedOutToday ? 'Nice work — keep the streak going.' : 'Log a set, even a quick one.'}
-            </Text>
+        ) : (
+          <View style={styles.workoutRow}>
+            <View style={styles.workoutIconWrap}>
+              <Ionicons
+                name={workedOutToday ? 'checkmark-circle' : 'barbell-outline'}
+                size={22}
+                color={workedOutToday ? colors.success : colors.textSecondary}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={typography.bodyMedium}>
+                {workedOutToday ? 'Workout logged today' : 'No workout logged yet'}
+              </Text>
+              <Text style={typography.caption}>
+                {workedOutToday ? 'Nice work — keep the streak going.' : 'Log a set, even a quick one.'}
+              </Text>
+            </View>
+            {!workedOutToday && (
+              <Button
+                label="Log"
+                onPress={() => router.push('/log/workout')}
+                variant="outline"
+                fullWidth={false}
+              />
+            )}
           </View>
-          {!workedOutToday && (
-            <Button
-              label="Log"
-              onPress={() => router.push('/log/workout')}
-              variant="outline"
-              fullWidth={false}
-            />
-          )}
-        </View>
+        )}
       </Card>
 
       <Text style={[typography.h3, styles.sectionTitle]}>Today's meals</Text>
-      <TodayMealsList meals={todayMeals} />
+      {mealsQuery.isError ? (
+        <Card>
+          <View style={styles.workoutRow}>
+            <Ionicons name="alert-circle-outline" size={22} color={colors.danger} />
+            <Text style={[typography.bodyMedium, { flex: 1 }]}>Couldn't load today's meals.</Text>
+            <Button label="Retry" onPress={() => mealsQuery.refetch()} variant="outline" fullWidth={false} />
+          </View>
+        </Card>
+      ) : (
+        <TodayMealsList meals={todayMeals} />
+      )}
     </Screen>
   );
 }
