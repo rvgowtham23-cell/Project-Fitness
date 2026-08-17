@@ -17,6 +17,7 @@ export function useAppBootstrap(): BootstrapStatus {
 
     (async () => {
       const refreshToken = await getRefreshToken();
+      if (__DEV__) console.log('[bootstrap] refreshToken present:', !!refreshToken);
       if (!refreshToken) {
         if (!cancelled) setStatus('unauthenticated');
         return;
@@ -24,8 +25,15 @@ export function useAppBootstrap(): BootstrapStatus {
 
       try {
         const { profile } = await apiClient.getProfile();
+        if (__DEV__) console.log('[bootstrap] getProfile ok, onboardingCompletedAt:', profile.onboardingCompletedAt);
         if (!cancelled) setStatus(profile.onboardingCompletedAt ? 'ready' : 'needs-onboarding');
       } catch (err) {
+        if (__DEV__) {
+          console.log(
+            '[bootstrap] getProfile failed:',
+            err instanceof ApiError ? `ApiError ${err.status}: ${err.message}` : String(err),
+          );
+        }
         // 404 = authenticated but never finished onboarding (e.g. app was closed mid-flow) —
         // resume onboarding rather than treating it as a login failure. Any other error
         // (expired/revoked refresh token, network) falls back to a fresh login.

@@ -49,18 +49,29 @@ let refreshPromise: Promise<string | null> | null = null;
 
 async function performRefresh(): Promise<string | null> {
   const refreshToken = await getRefreshToken();
-  if (!refreshToken) return null;
+  if (!refreshToken) {
+    if (__DEV__) console.log('[api-client] refresh skipped: no refresh token stored');
+    return null;
+  }
   try {
     const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (__DEV__) {
+        const body = await res.text().catch(() => '');
+        console.log(`[api-client] refresh call failed: HTTP ${res.status} ${body}`);
+      }
+      return null;
+    }
     const body = (await res.json()) as { accessToken: string; refreshToken: string };
     await saveTokens(body.accessToken, body.refreshToken);
+    if (__DEV__) console.log('[api-client] refresh succeeded, new token saved');
     return body.accessToken;
-  } catch {
+  } catch (err) {
+    if (__DEV__) console.log('[api-client] refresh threw:', String(err));
     return null;
   }
 }
