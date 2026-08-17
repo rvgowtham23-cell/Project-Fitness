@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '../../src/theme';
 import { Button, Card, Screen } from '../../src/components/ui';
+import { clearTokens } from '../../src/lib/auth-storage';
 
 function SettingsRow({
   icon,
@@ -31,6 +34,24 @@ export default function ProfileScreen() {
   const [mealReminders, setMealReminders] = useState(true);
   const [workoutReminders, setWorkoutReminders] = useState(true);
   const [weeklySummary, setWeeklySummary] = useState(true);
+  const queryClient = useQueryClient();
+
+  function confirmSignOut() {
+    Alert.alert('Sign out?', "You'll need to log in again to continue.", [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign out',
+        style: 'destructive',
+        onPress: async () => {
+          await clearTokens();
+          // Drops every cached query (nutrition/workouts/exercises/etc.) so a different
+          // account logging in next can't briefly see the previous user's cached data.
+          queryClient.clear();
+          router.replace('/onboarding');
+        },
+      },
+    ]);
+  }
 
   function confirmDelete() {
     Alert.alert(
@@ -106,6 +127,7 @@ export default function ProfileScreen() {
           label="Export my data"
           onPress={() => Alert.alert('Export requested (stub)')}
         />
+        <SettingsRow icon="log-out-outline" label="Sign out" onPress={confirmSignOut} />
         <SettingsRow icon="trash-outline" label="Delete account" onPress={confirmDelete} danger />
       </Card>
     </Screen>
