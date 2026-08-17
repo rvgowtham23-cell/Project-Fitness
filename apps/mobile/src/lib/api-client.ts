@@ -5,6 +5,7 @@ import type {
   ParsedWorkoutResponse,
 } from '@fitness/shared-types';
 import { API_BASE_URL } from './config';
+import { getAccessToken, saveTokens } from './auth-storage';
 import {
   mockAnalyzeMealImageResponse,
   mockBarcodeProduct,
@@ -18,12 +19,17 @@ import type {
   BarcodeProductResponse,
   Exercise,
   FoodSearchResult,
-  OnboardingDraft,
+  MealRecord,
   SaveMealPayload,
   SaveMealResult,
   SaveWorkoutPayload,
   SaveWorkoutResult,
+  WorkoutSessionRecord,
 } from '../types/api';
+import type { OnboardingApiPayload } from './onboarding-mapper';
+import { toCreateMealPayload } from './meal-mapper';
+import type { MealTypeValue } from './meal-type';
+import { toCreateWorkoutPayload } from './workout-mapper';
 
 export class ApiError extends Error {
   status?: number;
@@ -35,12 +41,12 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = await getAccessToken();
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      // TODO: attach `Authorization: Bearer <accessToken>` once the auth module
-      // (POST /auth/login + refresh rotation, per architecture-plan.md §D) is wired up.
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
   });
@@ -77,6 +83,33 @@ async function withMockFallback<T>(real: () => Promise<T>, mock: T, label: strin
 }
 
 export const apiClient = {
+  // Auth is never mock-fallback'd — pretending register/login succeeded when the real
+  // request failed is exactly what left the onboarding "reward" screen showing locally
+  // computed numbers with no account ever created on the backend.
+  register: async (email: string, password: string, fullName: string) => {
+    const tokens = await request<{ accessToken: string; refreshToken: string }>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, fullName }),
+    });
+    await saveTokens(tokens.accessToken, tokens.refreshToken);
+    return tokens;
+  },
+
+  login: async (email: string, password: string) => {
+    const tokens = await request<{ accessToken: string; refreshToken: string }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    await saveTokens(tokens.accessToken, tokens.refreshToken);
+    return tokens;
+  },
+
+  // Not mock-fallback'd: this is read-your-own-writes for the meal/workout logging just
+  // fixed above — silently showing an empty list on a network blip would reintroduce the
+  // same "looks fine, nothing actually happened" trust problem for a read instead of a write.
+  getMealsForDate: (date: string) => request<MealRecord[]>(`/meals?date=${date}`),
+  getWorkoutsForDate: (date: string) => request<WorkoutSessionRecord[]>(`/workouts?date=${date}`),
+
   getDailyNutrition: (date: string) =>
     withMockFallback(
       () => request<DailyNutritionSummary>(`/nutrition/daily?date=${date}`),
@@ -114,12 +147,18 @@ export const apiClient = {
       'POST /meals/analyze-image',
     ),
 
-  saveMeal: (payload: SaveMealPayload) =>
-    withMockFallback(
-      () => request<SaveMealResult>('/meals', { method: 'POST', body: JSON.stringify(payload) }),
-      { mealId: `mock-meal-${Date.now()}` },
-      'POST /meals',
-    ),
+  // Not mock-fallback'd, same reasoning as submitOnboarding: a fake "saved" result for a
+  // core-loop write is worse than a visible error, since the user has no other signal that
+  // nothing was actually persisted.
+  saveMeal: (
+    payload: SaveMealPayload,
+    mealType: MealTypeValue,
+    inputMethod: 'manual' | 'ai_photo' | 'barcode' = 'manual',
+  ) =>
+    request<SaveMealResult>('/meals', {
+      method: 'POST',
+      body: JSON.stringify(toCreateMealPayload(payload, mealType, inputMethod)),
+    }),
 
   searchFoods: (query: string) =>
     withMockFallback(
@@ -128,12 +167,11 @@ export const apiClient = {
       'GET /foods/search',
     ),
 
+  // Not mock-fallback'd now that a real backend endpoint exists — a "not found" barcode
+  // should surface as a real error (falls through to manual entry in the UI), not a fake
+  // product.
   getBarcodeProduct: (code: string) =>
-    withMockFallback(
-      () => request<BarcodeProductResponse>(`/foods/barcode/${code}`, { method: 'POST' }),
-      mockBarcodeProduct(code),
-      'POST /foods/barcode/:code',
-    ),
+    request<BarcodeProductResponse>(`/foods/barcode/${code}`, { method: 'POST' }),
 
   parseWorkoutText: (text: string) =>
     withMockFallback(
@@ -146,20 +184,25 @@ export const apiClient = {
       'POST /workouts/parse-text',
     ),
 
-  saveWorkout: (payload: SaveWorkoutPayload) =>
-    withMockFallback(
-      () => request<SaveWorkoutResult>('/workouts', { method: 'POST', body: JSON.stringify(payload) }),
-      { workoutSessionId: `mock-workout-${Date.now()}` },
-      'POST /workouts',
-    ),
+  // Not mock-fallback'd, same reasoning as saveMeal — and requires the fetched exercise
+  // library to resolve exerciseName -> exerciseId (see workout-mapper.ts).
+  saveWorkout: (payload: SaveWorkoutPayload, exerciseLibrary: Exercise[]) =>
+    request<SaveWorkoutResult>('/workouts', {
+      method: 'POST',
+      body: JSON.stringify(toCreateWorkoutPayload(payload.sets, payload.performedAt, exerciseLibrary)),
+    }),
 
   getExercises: () =>
     withMockFallback(() => request<Exercise[]>('/exercises'), mockExercises, 'GET /exercises'),
 
-  submitOnboarding: (draft: OnboardingDraft, localFallback: NutritionTargets) =>
-    withMockFallback(
-      () => request<NutritionTargets>('/profile/onboarding', { method: 'POST', body: JSON.stringify(draft) }),
-      localFallback,
-      'POST /profile/onboarding',
-    ),
+  // Not mock-fallback'd: this is the call that actually creates the user's profile/goal
+  // server-side. Silently substituting a locally-computed estimate here previously made a
+  // completely failed submission look identical to a successful one.
+  // Returns {profile, goal} — not a flat NutritionTargets shape, unlike GET /profile/targets.
+  // Callers that need the calorie/macro numbers should follow up with getNutritionTargets().
+  submitOnboarding: (payload: OnboardingApiPayload) =>
+    request<{ profile: unknown; goal: unknown }>('/profile/onboarding', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };

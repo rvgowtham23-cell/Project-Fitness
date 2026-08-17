@@ -57,6 +57,7 @@ const config: ExpoConfig = {
         backgroundColor: '#14161A',
       },
     ],
+    'expo-secure-store',
   ],
   experiments: {
     typedRoutes: true,

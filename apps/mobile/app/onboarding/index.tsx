@@ -6,13 +6,36 @@ import { colors, spacing, typography } from '../../src/theme';
 import { Button, Screen, TextField } from '../../src/components/ui';
 import { StepHeader } from '../../src/components/onboarding/StepHeader';
 import { useOnboarding } from '../../src/state/onboarding-context';
+import { apiClient, ApiError } from '../../src/lib/api-client';
 
 export default function OnboardingAccountScreen() {
   const { draft, updateDraft } = useOnboarding();
   const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleContinue() {
-    router.push('/onboarding/basic-info');
+  async function handleContinue() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      // A fresh install always registers first; a 409 means this email already has an
+      // account on this backend (e.g. re-onboarding after a reinstall) — fall back to
+      // logging in with the same credentials rather than treating that as a hard failure.
+      try {
+        await apiClient.register(draft.email, password, draft.name || draft.email);
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 409) {
+          await apiClient.login(draft.email, password);
+        } else {
+          throw err;
+        }
+      }
+      router.push('/onboarding/basic-info');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -35,11 +58,14 @@ export default function OnboardingAccountScreen() {
         onChangeText={setPassword}
       />
 
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
       <Button
         label="Continue"
         onPress={handleContinue}
         variant="accent"
         disabled={!draft.email.includes('@') || password.length < 8}
+        loading={submitting}
         style={styles.continueBtn}
       />
 
@@ -71,6 +97,7 @@ export default function OnboardingAccountScreen() {
 
 const styles = StyleSheet.create({
   continueBtn: { marginTop: spacing.sm },
+  errorText: { color: colors.danger, marginBottom: spacing.sm },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginVertical: spacing.xl },
   dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
   socialGap: { height: spacing.md },

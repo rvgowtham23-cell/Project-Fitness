@@ -62,6 +62,22 @@ export interface TodayMealSummary {
   calories: number;
 }
 
+// Mirrors the backend's Meal entity (apps/backend/src/modules/nutrition/entities/meal.entity.ts)
+// as returned by GET /meals?date= — field names match TypeORM's camelCase JSON serialization.
+export interface MealRecord {
+  id: string;
+  mealType: string;
+  loggedAt: string;
+  totalCalories: number;
+  items: Array<{ foodName: string }>;
+}
+
+// Mirrors WorkoutSession as returned by GET /workouts?date=.
+export interface WorkoutSessionRecord {
+  id: string;
+  startedAt: string;
+}
+
 export interface OnboardingDraft {
   email: string;
   name: string;

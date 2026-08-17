@@ -28,7 +28,10 @@ export class FoodNutrition {
   @JoinColumn({ name: 'food_item_id' })
   foodItem: FoodItem;
 
-  @Column({ type: 'numeric', precision: 8, scale: 2 })
+  // Explicit name: SnakeNamingStrategy converts "Per100g" to "per100g" (it splits on
+  // uppercase-letter boundaries, not letter/digit ones), which doesn't match this migration's
+  // hand-written "calories_per_100g" column — left implicit, every read/write 500s.
+  @Column({ type: 'numeric', precision: 8, scale: 2, name: 'calories_per_100g' })
   caloriesPer100g: number;
 
   @Column({ type: 'numeric', precision: 8, scale: 2 })

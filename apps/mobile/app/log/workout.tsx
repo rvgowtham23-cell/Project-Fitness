@@ -61,7 +61,10 @@ export default function WorkoutLogScreen() {
 
   function saveWorkout() {
     saveMutation.mutate(
-      { sets, performedAt: new Date().toISOString() },
+      {
+        payload: { sets, performedAt: new Date().toISOString() },
+        exerciseLibrary: exercisesQuery.data ?? [],
+      },
       { onSuccess: () => router.replace('/(tabs)/home') },
     );
   }
@@ -167,6 +170,11 @@ export default function WorkoutLogScreen() {
               onRemove={() => removeSet(i)}
             />
           ))}
+          {saveMutation.isError && (
+            <Text style={styles.errorText}>
+              {saveMutation.error instanceof Error ? saveMutation.error.message : 'Failed to save workout.'}
+            </Text>
+          )}
           <Button
             label="Save Workout"
             onPress={saveWorkout}
@@ -209,5 +217,6 @@ const styles = StyleSheet.create({
   v1BadgeText: { fontSize: 10, fontWeight: '700', color: colors.textTertiary },
   setsTitle: { marginBottom: spacing.sm },
   ambiguousHint: { marginBottom: spacing.md, color: colors.warning },
+  errorText: { color: colors.danger, marginBottom: spacing.sm },
   saveButton: { marginTop: spacing.md },
 });

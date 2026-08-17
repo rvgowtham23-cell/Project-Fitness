@@ -2,23 +2,34 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useDailyNutrition, useNutritionTargets } from '../../src/features/nutrition/use-daily-nutrition';
+import {
+  useDailyNutrition,
+  useMealsForDate,
+  useNutritionTargets,
+} from '../../src/features/nutrition/use-daily-nutrition';
+import { useWorkoutsForDate } from '../../src/features/workout/use-workout';
 import { CalorieSummaryCard } from '../../src/components/home/CalorieSummaryCard';
 import { MacroProgressGrid } from '../../src/components/home/MacroProgressGrid';
 import { TodayMealsList } from '../../src/components/home/TodayMealsList';
 import { Button, Card, ErrorState, LoadingState, Screen } from '../../src/components/ui';
 import { colors, spacing, typography } from '../../src/theme';
-import { mockTodayMeals } from '../../src/lib/mock-data';
+import type { TodayMealSummary } from '../../src/types/api';
 
 const today = new Date().toISOString().slice(0, 10);
 
 export default function HomeScreen() {
   const nutritionQuery = useDailyNutrition(today);
   const targetsQuery = useNutritionTargets();
+  const mealsQuery = useMealsForDate(today);
+  const workoutsQuery = useWorkoutsForDate(today);
 
-  // TODO: replace with GET /workouts?date=today once that endpoint is wired to a hook —
-  // hardcoded false here just demonstrates the "no workout yet" state.
-  const workedOutToday = false;
+  const workedOutToday = (workoutsQuery.data?.length ?? 0) > 0;
+  const todayMeals: TodayMealSummary[] = (mealsQuery.data ?? []).map((meal) => ({
+    id: meal.id,
+    name: meal.items.map((item) => item.foodName).join(', ') || meal.mealType,
+    loggedAt: new Date(meal.loggedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+    calories: Math.round(Number(meal.totalCalories)),
+  }));
 
   if (nutritionQuery.isLoading || targetsQuery.isLoading) {
     return (
@@ -83,10 +94,7 @@ export default function HomeScreen() {
       </Card>
 
       <Text style={[typography.h3, styles.sectionTitle]}>Today's meals</Text>
-      {/* architecture-plan.md §G doesn't list a dedicated "meals for a day" endpoint —
-          likely GET /meals?date= once the Nutrition module is built. Using mock data
-          directly (not a hook) until that contract exists. */}
-      <TodayMealsList meals={mockTodayMeals} />
+      <TodayMealsList meals={todayMeals} />
     </Screen>
   );
 }

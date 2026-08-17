@@ -1,13 +1,15 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import type {
   AnalyzeMealImageResponse,
   DailyNutritionSummary as DailyNutritionSummaryDto,
+  SourceType,
 } from '@fitness/shared-types';
 
 import { UserGoal } from '../profile/entities/user-goal.entity';
 import { AiGatewayService } from '../ai-gateway/ai-gateway.service';
+import { FoodItem } from './entities/food-item.entity';
 import { FoodNutrition } from './entities/food-nutrition.entity';
 import { Meal, MealInputMethod } from './entities/meal.entity';
 import { MealItem } from './entities/meal-item.entity';
@@ -15,16 +17,39 @@ import { NutritionLog, NutritionLogSource } from './entities/nutrition-log.entit
 import { DailyNutritionSummary } from './entities/daily-nutrition-summary.entity';
 import { CreateMealDto, CreateMealItemDto } from './dto/create-meal.dto';
 import { AnalyzeMealImageDto } from './dto/analyze-meal-image.dto';
+import { PRODUCT_LOOKUP_PROVIDER, ProductLookupProvider } from './providers/product-lookup.provider';
+
+export interface BarcodeLookupResponse {
+  code: string;
+  name: string;
+  brand?: string;
+  item: {
+    foodName: string;
+    estimatedWeightG: number;
+    estimatedWeightRangeG: [number, number];
+    unit: string;
+    quantity: number;
+    calories: number;
+    proteinG: number;
+    carbsG: number;
+    fatG: number;
+    fiberG: number;
+    confidence: number;
+    source: SourceType;
+  };
+}
 
 @Injectable()
 export class NutritionService {
   constructor(
     @InjectRepository(Meal) private readonly meals: Repository<Meal>,
+    @InjectRepository(FoodItem) private readonly foodItems: Repository<FoodItem>,
     @InjectRepository(FoodNutrition) private readonly foodNutrition: Repository<FoodNutrition>,
     @InjectRepository(DailyNutritionSummary)
     private readonly dailySummaries: Repository<DailyNutritionSummary>,
     @InjectRepository(UserGoal) private readonly userGoals: Repository<UserGoal>,
     private readonly aiGateway: AiGatewayService,
+    @Inject(PRODUCT_LOOKUP_PROVIDER) private readonly productLookup: ProductLookupProvider,
   ) {}
 
   async analyzeMealImage(
@@ -105,6 +130,84 @@ export class NutritionService {
       await summaryRepo.save(summary);
 
       return savedMeal;
+    });
+  }
+
+  async lookupBarcode(code: string): Promise<BarcodeLookupResponse> {
+    if (!/^\d{8,14}$/.test(code)) {
+      throw new BadRequestException('Barcode must be 8-14 digits');
+    }
+
+    let foodItem = await this.foodItems.findOne({ where: { barcode: code } });
+    let nutrition = foodItem
+      ? await this.foodNutrition.findOne({ where: { foodItemId: foodItem.id } })
+      : null;
+
+    // Write-through cache: the first successful external lookup for a barcode is persisted
+    // so every subsequent scan of the same product (by any user) hits Postgres, not the
+    // external API — cost control and the mechanism by which the catalog grows over time
+    // (architecture plan §H).
+    if (!foodItem || !nutrition) {
+      const result = await this.productLookup.lookupByBarcode(code);
+      if (!result) {
+        throw new NotFoundException(`No product found for barcode ${code}`);
+      }
+
+      // Update in place if a foodItem row already exists for this barcode (e.g. a prior
+      // lookup created it but failed before writing the matching food_nutrition row) —
+      // `barcode` has a unique index, so re-`create()`-ing here would violate it.
+      foodItem = await this.foodItems.save(
+        Object.assign(foodItem ?? this.foodItems.create({ barcode: code }), {
+          name: result.name,
+          brand: result.brand,
+          servingSizeG: result.servingSizeG,
+          servingUnit: result.servingUnit,
+          sourceType: 'OPENFOODFACTS',
+        }),
+      );
+      nutrition = await this.foodNutrition.save(
+        Object.assign(nutrition ?? this.foodNutrition.create({ foodItemId: foodItem.id }), {
+          caloriesPer100g: result.caloriesPer100g,
+          proteinG: result.proteinG,
+          carbsG: result.carbsG,
+          fatG: result.fatG,
+          fiberG: result.fiberG,
+          sourceType: 'OPENFOODFACTS',
+        }),
+      );
+    }
+
+    const servingSizeG = Number(foodItem.servingSizeG) || 100;
+    const factor = servingSizeG / 100;
+
+    return {
+      code,
+      name: foodItem.name,
+      brand: foodItem.brand ?? undefined,
+      item: {
+        foodName: foodItem.name,
+        estimatedWeightG: servingSizeG,
+        estimatedWeightRangeG: [servingSizeG, servingSizeG],
+        unit: foodItem.servingUnit ?? 'g',
+        quantity: 1,
+        calories: this.round(Number(nutrition.caloriesPer100g) * factor),
+        proteinG: this.round(Number(nutrition.proteinG) * factor),
+        carbsG: this.round(Number(nutrition.carbsG) * factor),
+        fatG: this.round(Number(nutrition.fatG) * factor),
+        fiberG: this.round(Number(nutrition.fiberG) * factor),
+        confidence: 1,
+        source: foodItem.sourceType,
+      },
+    };
+  }
+
+  async getMealsForDate(userId: string, date: string): Promise<Meal[]> {
+    const dayStart = new Date(`${date.slice(0, 10)}T00:00:00.000Z`);
+    const dayEnd = new Date(`${date.slice(0, 10)}T23:59:59.999Z`);
+    return this.meals.find({
+      where: { userId, loggedAt: Between(dayStart, dayEnd) },
+      relations: ['items'],
+      order: { loggedAt: 'ASC' },
     });
   }
 

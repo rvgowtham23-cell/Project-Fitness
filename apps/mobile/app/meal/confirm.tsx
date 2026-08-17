@@ -8,6 +8,7 @@ import { Button, EmptyState } from '../../src/components/ui';
 import { MealItemCard } from '../../src/components/meal/MealItemCard';
 import { useMealDraft } from '../../src/state/meal-draft-context';
 import { useSaveMeal } from '../../src/features/nutrition/use-meal-mutations';
+import { deriveMealTypeFromTime } from '../../src/lib/meal-type';
 
 // The centerpiece of the "AI estimates, user confirms" pattern (architecture-plan.md §H,
 // §G's /meals/analyze-image being a draft-only endpoint): nothing here is saved until
@@ -36,8 +37,17 @@ export default function MealConfirmScreen() {
 
   function handleConfirm() {
     if (!draft) return;
+    const inputMethod = draft.originLabel.startsWith('From barcode')
+      ? 'barcode'
+      : draft.originLabel.startsWith('From photo')
+        ? 'ai_photo'
+        : 'manual';
     saveMealMutation.mutate(
-      { items: draft.items, loggedAt: new Date().toISOString(), aiRequestId: draft.aiRequestId },
+      {
+        payload: { items: draft.items, loggedAt: new Date().toISOString(), aiRequestId: draft.aiRequestId },
+        mealType: deriveMealTypeFromTime(),
+        inputMethod,
+      },
       {
         onSuccess: () => {
           clearDraft();
@@ -87,6 +97,11 @@ export default function MealConfirmScreen() {
             P{totals.proteinG.toFixed(0)}g · C{totals.carbsG.toFixed(0)}g · F{totals.fatG.toFixed(0)}g
           </Text>
         </View>
+        {saveMealMutation.isError && (
+          <Text style={styles.errorText}>
+            {saveMealMutation.error instanceof Error ? saveMealMutation.error.message : 'Failed to save meal.'}
+          </Text>
+        )}
         <Button
           label="Confirm & Save"
           onPress={handleConfirm}
@@ -119,5 +134,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   totalsRow: { alignItems: 'center' },
+  errorText: { color: colors.danger, textAlign: 'center' },
   emptyButton: { marginTop: spacing.lg, marginHorizontal: spacing.lg },
 });

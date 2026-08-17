@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, In, Repository } from 'typeorm';
+import { Between, ILike, In, Repository } from 'typeorm';
 
 import { Exercise } from './entities/exercise.entity';
 import { WorkoutSession, WorkoutSource } from './entities/workout-session.entity';
@@ -21,6 +21,16 @@ export class WorkoutService {
       return this.exercises.find({ where: { name: ILike(`%${query}%`) }, take: 50 });
     }
     return this.exercises.find({ take: 200, order: { name: 'ASC' } });
+  }
+
+  async getSessionsForDate(userId: string, date: string): Promise<WorkoutSession[]> {
+    const dayStart = new Date(`${date.slice(0, 10)}T00:00:00.000Z`);
+    const dayEnd = new Date(`${date.slice(0, 10)}T23:59:59.999Z`);
+    return this.sessions.find({
+      where: { userId, startedAt: Between(dayStart, dayEnd) },
+      relations: ['exercises', 'exercises.sets'],
+      order: { startedAt: 'ASC' },
+    });
   }
 
   async createWorkout(userId: string, dto: CreateWorkoutDto): Promise<WorkoutSession> {

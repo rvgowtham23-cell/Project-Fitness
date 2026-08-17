@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../identity/guards/jwt-auth.guard';
 import { CurrentUser } from '../identity/decorators/current-user.decorator';
@@ -26,5 +26,15 @@ export class NutritionController {
   @Get('nutrition/daily')
   getDailySummary(@CurrentUser() user: JwtPrincipal, @Query() query: DailyNutritionQueryDto) {
     return this.nutritionService.getDailySummary(user.userId, query.date);
+  }
+
+  @Get('meals')
+  getMealsForDate(@CurrentUser() user: JwtPrincipal, @Query() query: DailyNutritionQueryDto) {
+    return this.nutritionService.getMealsForDate(user.userId, query.date);
+  }
+
+  @Post('foods/barcode/:code')
+  lookupBarcode(@Param('code') code: string) {
+    return this.nutritionService.lookupBarcode(code);
   }
 }

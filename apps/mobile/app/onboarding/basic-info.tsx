@@ -1,11 +1,12 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Button, Screen, SelectableChip, TextField } from '../../src/components/ui';
 import { StepHeader } from '../../src/components/onboarding/StepHeader';
 import { useOnboarding } from '../../src/state/onboarding-context';
-import { spacing } from '../../src/theme';
+import { spacing, colors } from '../../src/theme';
 import type { OnboardingDraft } from '../../src/types/api';
+import { isValidIsoDate } from '../../src/lib/date-validation';
 
 const GENDERS: { key: NonNullable<OnboardingDraft['gender']>; label: string }[] = [
   { key: 'female', label: 'Female' },
@@ -17,9 +18,10 @@ const GENDERS: { key: NonNullable<OnboardingDraft['gender']>; label: string }[] 
 export default function BasicInfoScreen() {
   const { draft, updateDraft } = useOnboarding();
 
+  const dateOfBirthValid = isValidIsoDate(draft.dateOfBirth);
   const canContinue =
     draft.name.trim().length > 0 &&
-    /^\d{4}-\d{2}-\d{2}$/.test(draft.dateOfBirth) &&
+    dateOfBirthValid &&
     !!draft.gender &&
     parseFloat(draft.heightCm) > 0 &&
     parseFloat(draft.weightKg) > 0;
@@ -38,6 +40,9 @@ export default function BasicInfoScreen() {
         onChangeText={(v) => updateDraft({ dateOfBirth: v })}
         keyboardType="numbers-and-punctuation"
       />
+      {draft.dateOfBirth.length > 0 && !dateOfBirthValid && (
+        <Text style={styles.hintText}>Enter a valid date as YYYY-MM-DD (e.g. 1998-09-22).</Text>
+      )}
 
       <View style={styles.chipWrap}>
         {GENDERS.map((g) => (
@@ -79,4 +84,5 @@ export default function BasicInfoScreen() {
 const styles = StyleSheet.create({
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.lg },
   row: { flexDirection: 'row', gap: spacing.md },
+  hintText: { color: colors.danger, marginTop: -spacing.sm, marginBottom: spacing.md },
 });

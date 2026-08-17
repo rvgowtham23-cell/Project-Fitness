@@ -1,6 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../lib/api-client';
 import type { SaveMealPayload } from '../../types/api';
+import type { MealTypeValue } from '../../lib/meal-type';
+
+interface SaveMealArgs {
+  payload: SaveMealPayload;
+  mealType: MealTypeValue;
+  inputMethod?: 'manual' | 'ai_photo' | 'barcode';
+}
 
 export function useAnalyzeMealImage() {
   return useMutation({
@@ -14,7 +21,8 @@ export function useSaveMeal() {
     // TODO(offline-sync): queue this locally (with a client-generated UUIDv7, per
     // architecture-plan.md §F) when there's no connectivity, rather than failing the
     // save outright. Deferred — see architecture-plan.md §L roadmap.
-    mutationFn: (payload: SaveMealPayload) => apiClient.saveMeal(payload),
+    mutationFn: ({ payload, mealType, inputMethod }: SaveMealArgs) =>
+      apiClient.saveMeal(payload, mealType, inputMethod),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['nutrition'] });
     },

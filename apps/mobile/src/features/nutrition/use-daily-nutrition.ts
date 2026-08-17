@@ -14,3 +14,10 @@ export function useNutritionTargets() {
     queryFn: () => apiClient.getNutritionTargets(),
   });
 }
+
+export function useMealsForDate(date: string) {
+  return useQuery({
+    queryKey: ['nutrition', 'meals', date],
+    queryFn: () => apiClient.getMealsForDate(date),
+  });
+}
