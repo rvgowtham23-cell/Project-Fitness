@@ -39,7 +39,15 @@ export function TodayWorkoutsList({ sessions, exercisesById }: Props) {
   function confirmDelete(sessionId: string) {
     Alert.alert('Delete workout?', 'This removes the whole logged session.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(sessionId) },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () =>
+          deleteMutation.mutate(sessionId, {
+            onError: (err) =>
+              Alert.alert('Couldn\'t delete', err instanceof Error ? err.message : 'Please try again.'),
+          }),
+      },
     ]);
   }
 

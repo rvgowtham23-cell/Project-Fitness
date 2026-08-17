@@ -126,6 +126,11 @@ export default function MealEditScreen() {
             {updateMutation.error instanceof Error ? updateMutation.error.message : 'Failed to save changes.'}
           </Text>
         )}
+        {deleteMutation.isError && (
+          <Text style={styles.errorText}>
+            {deleteMutation.error instanceof Error ? deleteMutation.error.message : 'Failed to delete meal.'}
+          </Text>
+        )}
         <Button
           label="Save changes"
           onPress={handleSave}

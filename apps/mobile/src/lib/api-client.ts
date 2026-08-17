@@ -112,6 +112,14 @@ async function request<T>(path: string, init?: RequestInit, isRetry = false): Pr
     throw new ApiError(message, res.status);
   }
 
+  // DELETE endpoints return 204 No Content with an empty body — calling .json() on that
+  // throws (SyntaxError: Unexpected end of JSON input), which made every successful delete
+  // look like a failed mutation to callers (onSuccess never ran, so e.g. the deleted
+  // workout/meal kept showing on Home until a full app reload happened to refetch fresh data).
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
   return res.json() as Promise<T>;
 }
 
